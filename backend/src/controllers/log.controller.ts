@@ -47,7 +47,8 @@ export const ingestLogController = async (req: AuthRequest, res: Response) => {
 export const searchLogsController = async (req: AuthRequest, res: Response) => {
     try {
         if (!req.user) return res.status(401).json({ detail: "Unauthorized" });
-        const logs = await searchLogsService(req.user, req.query.q as string);
+        const timeRange = req.query.timeRange as string || '15m';
+        const logs = await searchLogsService(req.user, req.query.q as string, timeRange);
         res.json({ status: "success", tenant_access: req.user.tenant, data: logs });
     } catch (error: any) {
         console.error("Search Error:", error);

@@ -30,16 +30,28 @@ export const indexLogService = async (logData: CentralLogSchema, user: { role: s
 };
 
 // Search Log
-export const searchLogsService = async (user: { role: string; tenant: string }, q?: string) => {
+export const searchLogsService = async (user: { role: string; tenant: string }, q?: string, timeRange?: string) => {
     // role == admin ดึงทุก Index (logs-*) แต่ถ้าเป็น viewer ให้ดึง tenant ของตน
     const indexPattern = user.role === 'admin' ? 'log-*' : `log-${user.tenant.toLowerCase()}`;
+
+    // กำหนดเวลา (Time Range)
+    let gte = "now-15m/m"; // default 15 mins
+    if (timeRange === '15m') gte = "now-15m/m";
+    if (timeRange === '1h') gte = "now-1h/m";
+    if (timeRange === '24h') gte = "now-24h/h";
+    if (timeRange === '7d') gte = "now-7d/d";
 
     const response = await osClient.search({
         index: indexPattern,
         body: {
-            query: q ? { query_string: { query: q } } : { match_all: {} },
+            query: {
+                bool: {
+                    must: q ? [{ query_string: { query: q } }] : [{ match_all: {} }],
+                    filter: [{ range: { "@timestamp": { gte } } }]
+                }
+            },
             sort: [{ "@timestamp": { order: "desc" } }],
-            size: 50
+            size: 100
         }
     });
 
