@@ -1,0 +1,152 @@
+{
+	"info": {
+		"_postman_id": "b3e0c0a9-1234-4567-89ab-cdef01234567",
+		"name": "Log Management API",
+		"description": "API Collection for testing Log Management endpoints.\n\nชุดทดสอบ API นี้เตรียมไว้สำหรับกรรมการเพื่อทดสอบการทำงานของ Backend แบบ End-to-End ตั้งแต่การยืนยันตัวตน (RBAC), ส่งข้อมูล (Ingest), ค้นหาข้อมูล (Search) ไปจนถึงดึงรายการแจ้งเตือนความปลอดภัย (Alerts)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Login (Get Token)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"pm.collectionVariables.set(\"token\", jsonData.access_token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"adminpassword\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/login",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"login"
+					]
+				},
+				"description": "ดึง JWT Token เพื่อนำไปใช้กับ API อื่นๆ \n(มี Script ซ่อนไว้เพื่อบันทึกตัวแปร `{{token}}` ลงใน Collection Variables อัตโนมัติ ทำให้กรรมการไม่ต้อง Copy/Paste Token เองครับ)"
+			}
+		},
+		{
+			"name": "2. Ingest Log (HTTP POST)",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"tenant\": \"demoA\",\n    \"source\": \"postman_api\",\n    \"event_type\": \"test_manual_ingest\",\n    \"user\": \"admin_user\",\n    \"src_ip\": \"192.168.1.50\",\n    \"msg\": \"This log is sent via Postman\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/ingest",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"ingest"
+					]
+				},
+				"description": "ทดสอบจำลองการส่งข้อมูล Log ผ่าน HTTP POST (ใช้สำหรับ Web App, AWS, AD)\n\nระบบจะทำการรับข้อมูล, Normalize ด้วย Central Schema, และนำไปบันทึกแยกตาม Tenant Index (Data Isolation) ใน OpenSearch"
+			}
+		},
+		{
+			"name": "3. Search Logs",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/search",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"search"
+					]
+				},
+				"description": "ทดสอบการค้นหา Log ทั้งหมด\n\n- หากใช้ Token ของ Admin จะดึงข้อมูลจากทุก Tenant (`log-*`)\n- หากเป็น Viewer จะเห็นเฉพาะของตัวเอง\n\n*หมายเหตุ: โค้ด Backend ถูกเขียนกำหนด Limit `size: 50` เอาไว้ เพื่อดึงเฉพาะ 50 แถวล่าสุด (เรียงจากใหม่ไปเก่า) ป้องกันปัญหาข้อมูลใหญ่เกินไป*"
+			}
+		},
+		{
+			"name": "4. Get Alerts",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/alerts",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"alerts"
+					]
+				},
+				"description": "ดึงข้อมูลการแจ้งเตือนภัยคุกคาม (Security Alerts)\n\nAPI นี้จะไปดึงข้อมูลจาก Index ชื่อ `alerts` ซึ่งข้อมูลเหล่านี้ถูกสร้างโดย Background Cron Job ที่คอยเดินตรวจจับความผิดปกติ (เช่น Brute-force Login Failed > 5 ครั้ง/นาที) ตลอดเวลา"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8000"
+		}
+	]
+}
