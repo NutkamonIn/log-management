@@ -1,26 +1,26 @@
-# ระบบจัดการ Log แบบรวมศูนย์ (Centralized Log Management System)
+﻿# Centralized Log Management System
 
-โครงการนี้เป็นระบบต้นแบบ (Proof of Concept) สำหรับระบบจัดการและจัดเก็บ Log แบบรวมศูนย์ที่รองรับผู้ใช้งานหลายกลุ่ม (Multi-tenant) และมีความสามารถในการปรับขยายขนาด (Scalability) สูง ออกแบบมาเพื่อรวบรวม ปรับรูปแบบ จัดเก็บ และแสดงผลข้อมูล Log จากแหล่งข้อมูลที่หลากหลาย รวมถึงอุปกรณ์เครือข่าย (Firewalls, Routers) และแอปพลิเคชันระดับองค์กร (Microsoft AD, AWS, CrowdStrike)
+This project is a Proof of Concept (PoC) for a Centralized Log Management system that supports Multi-tenant architecture and high Scalability. It is designed to collect, normalize, store, and visualize log data from various sources, including network devices (Firewalls, Routers) and enterprise applications (Microsoft AD, AWS, CrowdStrike).
 
-## สถาปัตยกรรมระบบ
-สถาปัตยกรรมถูกออกแบบมาเพื่อรองรับการรับข้อมูล Log ปริมาณมาก (High-throughput) และมีระบบควบคุมสิทธิ์การเข้าถึงแบบ Role-Based Access Control (RBAC) เพื่อรับประกันการแยกส่วนข้อมูลระหว่าง Tenant อย่างเด็ดขาด 
-กรุณาศึกษาเอกสารรายละเอียดสถาปัตยกรรมเพิ่มเติมได้ที่: [docs/architecture.md](docs/architecture.md)
+## System Architecture
+The architecture is designed to handle high-throughput log ingestion and features Role-Based Access Control (RBAC) to ensure strict data isolation between tenants.
+For detailed architectural documentation, please refer to: [docs/architecture.md](docs/architecture.md)
 
-## โครงสร้างโครงการ
-รหัสต้นฉบับ (Repository) แบ่งออกเป็นสามส่วนหลัก:
-- [**Backend**](backend/README.md): เป็น Node.js/Express API ที่รับผิดชอบเรื่องการรับข้อมูล Log, การปรับโครงสร้างข้อมูล, ระบบ RBAC, และการเชื่อมต่อฐานข้อมูล OpenSearch
-- [**Frontend**](frontend/README.md): เป็นแอปพลิเคชัน React (Vite) สำหรับแสดงผลส่วนต่อประสานกับผู้ใช้ (GUI) รวมถึงหน้าแดชบอร์ด, ระบบแจ้งเตือน, และระบบค้นหา Log (Logs Explorer)
-- [**Ingest (Simulator)**](ingest/README.md): เป็นสคริปต์ Node.js สำหรับจำลองการสร้างและการส่งข้อมูล Log ในรูปแบบต่างๆ (Syslog และ HTTP JSON) เพื่อจุดประสงค์ในการทดสอบระบบ
+## Project Structure
+The repository is divided into three main components:
+- [**Backend**](backend/README.md): A Node.js/Express API responsible for log ingestion, data normalization, RBAC, and OpenSearch database integration.
+- [**Frontend**](frontend/README.md): A React (Vite) application providing the Graphical User Interface (GUI), including the dashboard, alerting system, and Logs Explorer.
+- [**Ingest (Simulator)**](ingest/README.md): Node.js scripts for simulating and transmitting various log formats (Syslog and HTTP JSON) for testing purposes.
 
-## ฟีเจอร์หลักและฟีเจอร์ขั้นสูงที่พัฒนาแล้ว
-- **สถาปัตยกรรม Multi-tenant ระดับสมบูรณ์ (True Multi-tenant):** ข้อมูล Log ถูกแยกเก็บใน Index ที่ต่างกันอย่างปลอดภัย (เช่น `log-demoa`, `log-demob`) ตามตัวตนของ Tenant โดยการแยกส่วนนี้ถูกควบคุมอย่างเข้มงวดผ่านระบบ Role-Based Access Control (RBAC)
-- **การเพิ่มพูนข้อมูลภูมิศาสตร์ (GeoIP Enrichment):** ท่อรับข้อมูล (Ingestion Pipeline) จะทำการแปลง Public IP Address เป็นสถานที่ตั้งทางภูมิศาสตร์ (ประเทศและเมือง) อัตโนมัติ โดยอ้างอิงจากฐานข้อมูล `geoip-lite`
-- **ระบบตรวจสอบการทำงาน (Observability and Tracing):** ได้มีการติดตั้ง Middleware เพื่อวัดและติดตามความล่าช้า (Latency) ในการทำงานของ API ทำให้สามารถตรวจสอบประสิทธิภาพและวิเคราะห์ความซับซ้อนของอัลกอริทึมได้แบบเรียลไทม์
-- **การดึงฟิลด์ข้อมูลแบบไดนามิก (Dynamic Field Extraction):** ระบบสามารถสแกนโครงสร้าง JSON ของ Log ที่รับเข้ามาและแยกแยะประเภทตัวแปร (String, Number, IP) เพื่อนำมาแสดงผลเป็นคอลัมน์และตัวกรองให้ผู้ใช้เลือกได้โดยอัตโนมัติ (Schema-less Log Explorer)
-- **ระบบกรองช่วงเวลา (Time Range Filtering):** สามารถกรองข้อมูลและแสดงกราฟ Histogram ตามช่วงเวลาได้อย่างแม่นยำ (เช่น 15 นาที, 1 ชั่วโมง, 24 ชั่วโมง) เพื่อใช้ในการวิเคราะห์พฤติกรรมหรือปริมาณทราฟฟิกย้อนหลัง
-- **ระบบบูรณาการอย่างต่อเนื่อง (CI/CD):** มีการตั้งค่า GitHub Actions เพื่อรันการทดสอบ Unit Test และตรวจสอบการ Build ของ Frontend ทุกครั้งที่มีการแก้ไขโค้ด
-- **การรักษาความปลอดภัยขั้นสูง (Security Hardening):** โครงสร้างพื้นฐานมีการป้องกันด้วย Nginx Reverse Proxy, รองรับการเข้ารหัส HTTPS (TLS), ใช้ระบบยืนยันตัวตนแบบ JWT, และมีกลไกตรวจสอบสิทธิ์การใช้งานที่รัดกุม
+## Key Features & Advanced Capabilities
+- **True Multi-tenant Architecture:** Log data is securely isolated into different indices (e.g., `log-demoa`, `log-demob`) based on tenant identity. This isolation is strictly enforced through Role-Based Access Control (RBAC).
+- **GeoIP Enrichment:** The ingestion pipeline automatically resolves Public IP Addresses to geographic locations (country and city) using the `geoip-lite` database.
+- **Observability and Tracing:** Middleware is implemented to measure and track API execution latency, enabling real-time performance monitoring and algorithm time complexity analysis.
+- **Dynamic Field Extraction:** The system scans the JSON structure of incoming logs, identifies variable types (String, Number, IP), and dynamically presents them as selectable columns and filters (Schema-less Log Explorer).
+- **Time Range Filtering:** Users can accurately filter data and visualize Histograms based on specific time ranges (e.g., Last 15 minutes, 1 hour, 24 hours) for retroactive traffic analysis.
+- **Continuous Integration (CI/CD):** GitHub Actions are configured to run automated Unit Tests and Frontend build checks upon every code modification.
+- **Security Hardening:** The infrastructure is protected by an Nginx Reverse Proxy, supports HTTPS (TLS) encryption, utilizes JWT authentication, and implements robust authorization mechanisms.
 
-## คู่มือการติดตั้งระบบ
-- **การตั้งค่าระบบเครื่องเซิร์ฟเวอร์ท้องถิ่น (Local Appliance Setup):** ขั้นตอนการติดตั้งและรันระบบแบบ Local โดยใช้ Docker Compose สามารถอ่านได้ที่ [docs/setup_appliance.md](docs/setup_appliance.md)
-- **การติดตั้งระบบบนคลาวด์ (SaaS/Cloud Deployment):** ขั้นตอนการนำระบบขึ้นประมวลผลบนผู้ให้บริการคลาวด์สาธารณะพร้อมการเชื่อมต่อ HTTPS (TLS) สามารถอ่านได้ที่ [docs/setup_saas.md](docs/setup_saas.md)
+## Deployment Guides
+- **Local Appliance Setup:** Instructions for installing and running the system locally via Docker Compose can be found at [docs/setup_appliance.md](docs/setup_appliance.md)
+- **SaaS/Cloud Deployment:** Instructions for deploying the system to a public cloud provider with HTTPS (TLS) configuration can be found at [docs/setup_saas.md](docs/setup_saas.md)

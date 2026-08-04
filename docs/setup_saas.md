@@ -1,71 +1,71 @@
-# คู่มือการ Deploy แบบ SaaS/Cloud
+﻿# SaaS/Cloud Deployment Guide
 
-เอกสารนี้อธิบายวิธีการนำระบบ **Log Management** ขึ้นไปติดตั้งบน Cloud Server สาธารณะ (เช่น AWS EC2, DigitalOcean, Azure) เพื่อเปิดให้บริการในรูปแบบ SaaS (Software as a Service)
+This document explains how to deploy the **Log Management** system to a public Cloud Server (e.g., AWS EC2, DigitalOcean, Azure) to operate it as a SaaS (Software as a Service) platform.
 
-## ความต้องการของระบบ (System Requirements)
-- **OS:** Ubuntu 22.04 LTS (หรือใหม่กว่า)
-- **CPU:** ขั้นต่ำ 4 vCPU
-- **RAM:** ขั้นต่ำ 8 GB
-- **Disk:** ขั้นต่ำ 40 GB
-- **Network Ports:** ต้องอนุญาต (Allow) พอร์ต 80 (HTTP), 443 (HTTPS), 5141/5142 (UDP Syslog) บน Firewall หรือ Security Group
-- **Software:** Docker Engine และ Docker Compose
+## System Requirements
+- **OS:** Ubuntu 22.04 LTS (or higher)
+- **CPU:** Minimum 4 vCPU
+- **RAM:** Minimum 8 GB
+- **Disk:** Minimum 40 GB
+- **Network Ports:** Ports 80 (HTTP), 443 (HTTPS), and 5141/5142 (UDP Syslog) must be allowed on the Firewall or Security Group.
+- **Software:** Docker Engine and Docker Compose
 
 ---
 
-## ขั้นตอนการติดตั้ง (Deployment Steps)
+## Deployment Steps
 
-1. **โคลน Source Code ลงใน Server**
+1. **Clone the Source Code to the Server**
    ```bash
    git clone https://github.com/your-username/log-management.git
    cd log-management
    ```
 
-2. **ตั้งค่ารหัสผ่าน (Environment Variables)**
-   แก้ไขไฟล์ `docker-compose.yml` (หรือสร้างไฟล์ `.env`) และเปลี่ยน `JWT_SECRET` ให้เป็นรหัสผ่านที่เดายาก:
+2. **Configure Environment Variables**
+   Modify the `docker-compose.yml` file (or create a `.env` file) and update `JWT_SECRET` to a strong passphrase:
    ```yaml
    environment:
      - OPENSEARCH_URL=https://admin:admin@opensearch:9200
      - JWT_SECRET=P@ssw0rdSuperSecr3t2026!#RandomXYZ
    ```
 
-3. **สั่งรันระบบด้วย Docker Compose**
+3. **Start the System via Docker Compose**
    ```bash
    docker-compose up -d --build
    ```
 
-4. **ตรวจสอบการทำงาน**
-   ดูสถานะของ Container ทั้งหมดว่าขึ้นคำว่า `Up` หรือไม่
+4. **Verify Deployment**
+   Check the status of all containers to ensure they are `Up`.
    ```bash
    docker-compose ps
    ```
 
 ---
 
-## การเชื่อมต่อแบบความปลอดภัยสูง (HTTPS/TLS)
+## Secure Connection (HTTPS/TLS)
 
-ระบบรองรับการตั้งค่าใบรับรองความปลอดภัย 2 รูปแบบ:
+The system supports two types of security certificates:
 
-1. **Self-signed SSL Certificate (สำหรับทดสอบด้วย IP):** 
-   ระบบจะสร้างขึ้นอัตโนมัติเมื่อรันผ่าน Docker ครั้งแรก หากเข้าใช้งานผ่าน IP จะพบหน้าต่างแจ้งเตือน "Your connection is not private" ให้กดยอมรับความเสี่ยงเพื่อเข้าสู่ระบบ
+1. **Self-signed SSL Certificate (For IP-based testing):** 
+   Generated automatically during the initial Docker build. When accessing via IP, the browser will display a "Your connection is not private" warning. Accept the risk to proceed.
 
-2. **Let's Encrypt SSL (สำหรับผู้ที่มีโดเมนจริง เช่น demo-labs.site):**
-   เพื่อความสมบูรณ์แบบระดับ Production แนะนำให้จดโดเมน ชี้ DNS A Record มาที่ Server IP จากนั้นใช้ Nginx และ Certbot ในการขอใบรับรองฟรี
+2. **Let's Encrypt SSL (For production domains, e.g., demo-labs.site):**
+   For a complete production setup, it is highly recommended to register a domain, point the DNS A Record to the Server IP, and utilize Nginx with Certbot to obtain a free certificate.
    ```bash
    sudo apt install certbot python3-certbot-nginx
    sudo certbot --nginx -d logs.demo-labs.site
    ```
-   ซึ่งจะทำให้ระบบของคุณมีหน้ากุญแจสีเขียวสมบูรณ์แบบ 100%
+   This will secure your system with a fully verified green padlock.
 
 ---
 
-## การรับส่ง Log ไปยัง Cloud Server
+## Ingesting Logs to the Cloud Server
 
-ในฝั่งของลูกค้า (Client) ที่ต้องการยิง Log มารวมที่ Cloud Server ของเรา ให้เปลี่ยน IP จาก `127.0.0.1` เป็น Public IP ของ Server นี้:
+On the Client side that needs to forward logs to the Cloud Server, replace the `127.0.0.1` IP address with the Public IP of this server:
 
-**1. ยิงผ่าน HTTP API (JSON):**
-ใช้ Endpoint: `https://<YOUR_SERVER_PUBLIC_IP>/api/v1/ingest`
+**1. Ingestion via HTTP API (JSON):**
+Use Endpoint: `https://<YOUR_SERVER_PUBLIC_IP>/api/v1/ingest`
 
-**2. ยิงผ่าน Syslog (UDP):**
-ลูกค้า Tenant A: ส่ง Syslog ไปที่ Port `5141`
-ลูกค้า Tenant B: ส่ง Syslog ไปที่ Port `5142`
-*(อย่าลืมเปิด Firewall / Security Group บน Cloud Provider ให้พอร์ตเหล่านี้สามารถทะลุเข้ามาได้)*
+**2. Ingestion via Syslog (UDP):**
+Tenant A Clients: Forward Syslog to Port `5141`
+Tenant B Clients: Forward Syslog to Port `5142`
+*(Ensure that these ports are opened on the Cloud Provider's Firewall / Security Group to allow inbound traffic)*

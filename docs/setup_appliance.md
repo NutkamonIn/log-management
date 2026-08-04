@@ -1,80 +1,80 @@
-# คู่มือการติดตั้งระบบ (Local Appliance)
+﻿# Local Appliance Setup Guide
 
-เอกสารฉบับนี้อธิบายวิธีการติดตั้งและรันระบบ Log Management ในรูปแบบ Appliance ท้องถิ่น หรือบน Virtual Machine เครื่องเดียว เหมาะสำหรับการทดสอบ (Proof of Concept) และการพัฒนา
+This document explains how to install and run the Log Management system as a local appliance or on a single Virtual Machine. It is ideal for Proof of Concept (PoC) testing and development.
 
-## ความต้องการของระบบ (Prerequisites)
-- **ระบบปฏิบัติการ (OS):** Ubuntu 22.04 LTS หรือสูงกว่า (แนะนำสำหรับการทำ Appliance)
-- **หน่วยประมวลผล (CPU):** ขั้นต่ำ 4 vCPU
-- **หน่วยความจำ (Memory):** ขั้นต่ำ 8 GB RAM
-- **พื้นที่จัดเก็บข้อมูล (Storage):** ขั้นต่ำ 40 GB
-- **พอร์ตเครือข่าย (Network Ports):** ต้องเปิดพอร์ต 80 (HTTP), 443 (HTTPS), 5141/5142 (UDP Syslog) บนระบบ Firewall
-- **ซอฟต์แวร์:** Docker Engine และ Docker Compose (ไม่จำเป็นต้องมี Node.js หากรันผ่าน Container ทั้งหมด)
+## Prerequisites
+- **Operating System (OS):** Ubuntu 22.04 LTS or higher (recommended for appliance setup)
+- **CPU:** Minimum 4 vCPU
+- **Memory:** Minimum 8 GB RAM
+- **Storage:** Minimum 40 GB
+- **Network Ports:** Ports 80 (HTTP), 443 (HTTPS), and 5141/5142 (UDP Syslog) must be open on the Firewall.
+- **Software:** Docker Engine and Docker Compose (Node.js is not required if running entirely via containers).
 
-## การติดตั้งและการใช้งาน (Installation and Execution)
+## Installation and Execution
 
-กระบวนการติดตั้งได้ถูกทำให้อัตโนมัติผ่าน Batch Script เพื่อเพิ่มความสะดวกสบายให้กับนักพัฒนา (Developer Experience)
+The deployment process has been automated via Batch Scripts to enhance the Developer Experience.
 
-1. **ไปยังโฟลเดอร์ของโปรเจกต์:**
-   เปิด PowerShell หรือ Command Prompt แล้วพิมพ์คำสั่ง:
+1. **Navigate to the Project Directory:**
+   Open PowerShell or Command Prompt and enter:
    ```powershell
    cd path/to/log-management
    ```
 
-2. **เปิดการทำงานของระบบ:**
+2. **Start the System:**
    ```powershell
    .\start.bat
    ```
-   *คำสั่งนี้จะทำการสร้าง (Build) Docker Image และเริ่มต้นเซอร์วิสทั้งหมด กรุณารอจนกระทั่งระบบแจ้งเตือนว่าการรันเสร็จสมบูรณ์ (System is running!)*
+   *This command will build the Docker Images and start all services. Please wait until the system displays the "System is running!" notification.*
 
-3. **การเริ่มต้นของเซอร์วิส:**
-   OpenSearch จำเป็นต้องใช้เวลาประมาณ 30 วินาทีในการเริ่มต้นระบบอย่างสมบูรณ์ โดย Backend service ได้ถูกตั้งค่าให้รอจนกว่า OpenSearch จะพร้อมทำงานก่อนเริ่มกระบวนการอื่น
+3. **Service Initialization:**
+   OpenSearch requires approximately 30 seconds to fully initialize. The Backend service is configured to wait until OpenSearch is healthy before starting other processes.
 
-4. **การเข้าถึงระบบ:**
-   - **ส่วนแสดงผล Frontend (Dashboard & Logs Explorer):** `http://localhost`
+4. **Accessing the System:**
+   - **Frontend UI (Dashboard & Logs Explorer):** `http://localhost`
    - **Backend API:** `http://localhost:8000`
    - **OpenSearch (Raw Access):** `http://localhost:9200`
    - **OpenSearch Dashboards:** `http://localhost:5601`
 
-   *หมายเหตุ: สามารถตรวจสอบความล่าช้าของการเรียก API (Observability metrics) ได้จากหน้าต่าง Terminal ของ Backend*
+   *Note: API call latency (Observability metrics) can be monitored in the Backend terminal window.*
 
-   *ข้อมูลสำหรับการเข้าสู่ระบบ (Authentication Credentials):*
-   - ผู้ดูแลระบบ (Administrator): `admin` / `adminpassword`
-   - ผู้เยี่ยมชม Tenant A: `viewer_demoa` / `viewer123`
-   - ผู้เยี่ยมชม Tenant B: `viewer_demob` / `viewer123`
+   *Authentication Credentials:*
+   - Administrator: `admin` / `adminpassword`
+   - Tenant A Viewer: `viewer_demoa` / `viewer123`
+   - Tenant B Viewer: `viewer_demob` / `viewer123`
 
 ---
 
-## การจำลองข้อมูลเข้าสู่ระบบ (Data Seeding)
+## Data Seeding
 
-เพื่อทดสอบการทำงานของ Dashboard จำเป็นต้องจำลองข้อมูลเข้าสู่ระบบ
+To test the Dashboard functionality, sample data must be seeded into the system.
 
-1. **การจำลองข้อมูลผ่าน HTTP API (JSON):**
+1. **Simulating Data via HTTP API (JSON):**
    ```powershell
    cd ingest
    npm install
    npm run http
    ```
-   *สคริปต์นี้จำลองการสร้าง Log จาก CrowdStrike, AWS, Microsoft AD และ Custom APIs*
+   *This script simulates log generation from CrowdStrike, AWS, Microsoft AD, and Custom APIs.*
 
-2. **การจำลองข้อมูลผ่าน Syslog (UDP 5141/5142):**
+2. **Simulating Data via Syslog (UDP 5141/5142):**
    ```powershell
    cd ingest
    npm run syslog
    ```
-   *สคริปต์นี้จำลองการส่งข้อมูลเครือข่ายผ่านโปรโตคอล Syslog*
+   *This script simulates network traffic transmitted via the Syslog protocol.*
 
 ---
 
-## การปิดและล้างระบบ (System Teardown)
+## System Teardown
 
-- **ปิดการทำงานเซอร์วิสทั้งหมด:** 
+- **Stop all services:** 
   ```powershell
   .\stop.bat
   ```
-  *(หยุดการทำงานของ Container แต่ยังเก็บรักษาข้อมูลใน OpenSearch ไว้)*
+  *(Stops the containers while retaining data in OpenSearch)*
 
-- **ล้างฐานข้อมูล:** 
+- **Wipe database:** 
   ```powershell
   .\clean.bat
   ```
-  *(ลบข้อมูลปริมาณ OpenSearch ทั้งหมดอย่างถาวร ใช้เมื่อต้องการคืนค่าระบบเป็นสถานะเริ่มต้น)*
+  *(Permanently deletes all OpenSearch volumes. Use this to reset the system to its initial state)*
