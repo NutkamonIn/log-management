@@ -16,6 +16,18 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Start OpenSearch Database
+        run: docker compose up -d opensearch
+
+      - name: Wait for OpenSearch to be ready
+        run: |
+          echo "Waiting for OpenSearch..."
+          until curl -s -k -u admin:admin https://localhost:9200 > /dev/null; do
+            echo "Waiting..."
+            sleep 5
+          done
+          echo "OpenSearch is ready!"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
