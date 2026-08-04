@@ -1,24 +1,24 @@
-# Centralized Log Management System
+# ระบบจัดการ Log แบบรวมศูนย์ (Centralized Log Management System)
 
-This project is a Proof of Concept (PoC) for a highly scalable, multi-tenant Centralized Log Management System designed to aggregate, parse, store, and visualize log data from diverse sources including network appliances (Firewalls, Routers) and enterprise applications (Microsoft AD, AWS, CrowdStrike).
+โครงการนี้เป็นระบบต้นแบบ (Proof of Concept) สำหรับระบบจัดการและจัดเก็บ Log แบบรวมศูนย์ที่รองรับผู้ใช้งานหลายกลุ่ม (Multi-tenant) และมีความสามารถในการปรับขยายขนาด (Scalability) สูง ออกแบบมาเพื่อรวบรวม ปรับรูปแบบ จัดเก็บ และแสดงผลข้อมูล Log จากแหล่งข้อมูลที่หลากหลาย รวมถึงอุปกรณ์เครือข่าย (Firewalls, Routers) และแอปพลิเคชันระดับองค์กร (Microsoft AD, AWS, CrowdStrike)
 
-## System Architecture
-The architecture is designed to handle high-throughput log ingestion and provides Role-Based Access Control (RBAC) to ensure data isolation among tenants. 
-Please refer to the detailed architecture documentation: [docs/architecture.md](docs/architecture.md).
+## สถาปัตยกรรมระบบ
+สถาปัตยกรรมถูกออกแบบมาเพื่อรองรับการรับข้อมูล Log ปริมาณมาก (High-throughput) และมีระบบควบคุมสิทธิ์การเข้าถึงแบบ Role-Based Access Control (RBAC) เพื่อรับประกันการแยกส่วนข้อมูลระหว่าง Tenant อย่างเด็ดขาด 
+กรุณาศึกษาเอกสารรายละเอียดสถาปัตยกรรมเพิ่มเติมได้ที่: [docs/architecture.md](docs/architecture.md)
 
-## Project Structure
-The repository is divided into three primary components:
-- [**Backend**](backend/README.md): Node.js/Express API responsible for log ingestion, normalization, RBAC, and OpenSearch database communication.
-- [**Frontend**](frontend/README.md): React (Vite) application providing the graphical user interface for log visualization, dashboards, alerting, and Logs Explorer (Search UI).
-- [**Ingest (Simulator)**](ingest/README.md): Node.js scripts designed to simulate the generation and transmission of various log formats (Syslog and HTTP JSON) for testing purposes.
+## โครงสร้างโครงการ
+รหัสต้นฉบับ (Repository) แบ่งออกเป็นสามส่วนหลัก:
+- [**Backend**](backend/README.md): เป็น Node.js/Express API ที่รับผิดชอบเรื่องการรับข้อมูล Log, การปรับโครงสร้างข้อมูล, ระบบ RBAC, และการเชื่อมต่อฐานข้อมูล OpenSearch
+- [**Frontend**](frontend/README.md): เป็นแอปพลิเคชัน React (Vite) สำหรับแสดงผลส่วนต่อประสานกับผู้ใช้ (GUI) รวมถึงหน้าแดชบอร์ด, ระบบแจ้งเตือน, และระบบค้นหา Log (Logs Explorer)
+- [**Ingest (Simulator)**](ingest/README.md): เป็นสคริปต์ Node.js สำหรับจำลองการสร้างและการส่งข้อมูล Log ในรูปแบบต่างๆ (Syslog และ HTTP JSON) เพื่อจุดประสงค์ในการทดสอบระบบ
 
-## Key and Advanced Features Implemented
-- **True Multi-tenant Architecture:** Logs are securely isolated into separate indices (e.g., `log-demoa`, `log-demob`) based on tenant identity. This isolation is strictly enforced via Role-Based Access Control (RBAC).
-- **GeoIP Enrichment:** The ingestion pipeline automatically resolves incoming public IP addresses to their corresponding geographical locations (country and city) utilizing the `geoip-lite` database.
-- **Observability and Tracing:** Custom middleware has been integrated to track API execution latency, facilitating real-time performance monitoring and algorithmic complexity analysis.
-- **Continuous Integration (CI/CD):** Automated GitHub Actions workflows are configured to execute unit testing and frontend build verification upon every code commit.
-- **Security Hardening:** The infrastructure is hardened with an Nginx reverse proxy, HTTPS (TLS) readiness, JWT-based authentication, and robust authorization mechanisms.
+## ฟีเจอร์หลักและฟีเจอร์ขั้นสูงที่พัฒนาแล้ว
+- **สถาปัตยกรรม Multi-tenant ระดับสมบูรณ์ (True Multi-tenant):** ข้อมูล Log ถูกแยกเก็บใน Index ที่ต่างกันอย่างปลอดภัย (เช่น `log-demoa`, `log-demob`) ตามตัวตนของ Tenant โดยการแยกส่วนนี้ถูกควบคุมอย่างเข้มงวดผ่านระบบ Role-Based Access Control (RBAC)
+- **การเพิ่มพูนข้อมูลภูมิศาสตร์ (GeoIP Enrichment):** ท่อรับข้อมูล (Ingestion Pipeline) จะทำการแปลง Public IP Address เป็นสถานที่ตั้งทางภูมิศาสตร์ (ประเทศและเมือง) อัตโนมัติ โดยอ้างอิงจากฐานข้อมูล `geoip-lite`
+- **ระบบตรวจสอบการทำงาน (Observability and Tracing):** ได้มีการติดตั้ง Middleware เพื่อวัดและติดตามความล่าช้า (Latency) ในการทำงานของ API ทำให้สามารถตรวจสอบประสิทธิภาพและวิเคราะห์ความซับซ้อนของอัลกอริทึมได้แบบเรียลไทม์
+- **ระบบบูรณาการอย่างต่อเนื่อง (CI/CD):** มีการตั้งค่า GitHub Actions เพื่อรันการทดสอบ Unit Test และตรวจสอบการ Build ของ Frontend ทุกครั้งที่มีการแก้ไขโค้ด
+- **การรักษาความปลอดภัยขั้นสูง (Security Hardening):** โครงสร้างพื้นฐานมีการป้องกันด้วย Nginx Reverse Proxy, รองรับการเข้ารหัส HTTPS (TLS), ใช้ระบบยืนยันตัวตนแบบ JWT, และมีกลไกตรวจสอบสิทธิ์การใช้งานที่รัดกุม
 
-## Deployment Guides
-- **Local Appliance Setup:** Instructions for deploying the system locally using Docker Compose can be found in [docs/setup_appliance.md](docs/setup_appliance.md).
-- **SaaS/Cloud Deployment:** Instructions for deploying the system to a public cloud environment with HTTPS (TLS) are located in [docs/setup_saas.md](docs/setup_saas.md).
+## คู่มือการติดตั้งระบบ
+- **การตั้งค่าระบบเครื่องเซิร์ฟเวอร์ท้องถิ่น (Local Appliance Setup):** ขั้นตอนการติดตั้งและรันระบบแบบ Local โดยใช้ Docker Compose สามารถอ่านได้ที่ [docs/setup_appliance.md](docs/setup_appliance.md)
+- **การติดตั้งระบบบนคลาวด์ (SaaS/Cloud Deployment):** ขั้นตอนการนำระบบขึ้นประมวลผลบนผู้ให้บริการคลาวด์สาธารณะพร้อมการเชื่อมต่อ HTTPS (TLS) สามารถอ่านได้ที่ [docs/setup_saas.md](docs/setup_saas.md)

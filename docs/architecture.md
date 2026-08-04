@@ -1,8 +1,8 @@
-# Log Management Architecture
+# สถาปัตยกรรมระบบ Log Management
 
-This document describes the system architecture and data flow of the Log Management system.
+เอกสารฉบับนี้อธิบายถึงสถาปัตยกรรมระบบและโครงสร้างการไหลของข้อมูล (Data Flow) ของระบบจัดการและจัดเก็บ Log แบบรวมศูนย์ (Centralized Log Management)
 
-## Architecture Diagram
+## แผนภาพสถาปัตยกรรม (Architecture Diagram)
 
 ```mermaid
 graph TD
@@ -33,7 +33,7 @@ graph TD
     api_log -->|POST /api/v1/ingest| express
     
     express --> parser
-    parser -->|Index: log-{tenant}| os
+    parser -->|"Index: log-{tenant}"| os
 
     %% Flow - Query & UI
     ui -->|HTTP/HTTPS| nginx
@@ -45,21 +45,21 @@ graph TD
     cron -->|Check Thresholds| os
 ```
 
-## Data Flow
+## การไหลของข้อมูล (Data Flow)
 
-1. **Ingestion Layer**
-   - The system receives log data through two primary channels:
-     - **Syslog (UDP):** Network devices transmit data to ports 5141/5142. The Backend service opens UDP sockets and associates incoming traffic with specific tenants based on the designated port.
-     - **HTTP POST:** Software systems (e.g., AWS, Microsoft Active Directory, CrowdStrike) transmit JSON payloads to the `/api/v1/ingest` endpoint.
-2. **Normalization & Enrichment Layer**
-   - All incoming logs are processed by the Parser Service. This service normalizes diverse log formats into a Central Schema, ensuring the presence of mandatory fields such as `@timestamp, tenant, event_type, source, user, src_ip`.
-   - **Enrichment:** The system automatically resolves the `src_ip` against a GeoIP database (`geoip-lite`) to append contextual country and city information to the log payload.
-   - **Observability:** An Express middleware tracks the execution latency of every API request (e.g., measuring Big-O time complexity in real-world scenarios) and logs slow transactions.
-3. **Storage Layer (True Multi-tenant Architecture)**
-   - The Backend identifies the tenant associated with each log and stores the data in OpenSearch. To ensure strict data isolation and security, the system utilizes dynamic indexing based on the tenant identifier (e.g., `log-demoa`, `log-demob`).
-4. **Query & Visualization Layer**
-   - Users access the system via a React-based Frontend interface.
-   - The system implements Role-Based Access Control (RBAC). If a user is authenticated as a `viewer` for `demoA`, the Backend restricts search queries strictly to the `log-demoa` index, thereby preventing unauthorized access to cross-tenant data.
-5. **Background Jobs**
-   - **Alerting Cron:** Executes every minute to evaluate database records against predefined security thresholds (e.g., login_failed > 5 attempts). Violations are recorded as alerts in the database.
-   - **Retention Cron:** Executes daily at midnight to purge logs older than 7 days, optimizing storage utilization and complying with data retention policies.
+1. **ชั้นรับข้อมูล (Ingestion Layer)**
+   - ระบบรับข้อมูล Log ผ่าน 2 ช่องทางหลัก:
+     - **Syslog (UDP):** อุปกรณ์เครือข่ายส่งข้อมูลมาที่พอร์ต 5141/5142 โดยระบบ Backend จะเปิด UDP Sockets รอรับและแยกแยะ Tenant ตามพอร์ตที่กำหนดไว้
+     - **HTTP POST:** ซอฟต์แวร์หรือแอปพลิเคชัน (เช่น AWS, Microsoft Active Directory, CrowdStrike) ส่งข้อมูลในรูปแบบ JSON มาที่ Endpoint `/api/v1/ingest`
+2. **ชั้นประมวลผลและเพิ่มพูนข้อมูล (Normalization & Enrichment Layer)**
+   - ข้อมูล Log ทั้งหมดจะถูกส่งผ่าน Parser Service เพื่อปรับโครงสร้างให้อยู่ในรูปแบบมาตรฐาน (Central Schema) โดยบังคับให้มีฟิลด์สำคัญ เช่น `@timestamp, tenant, event_type, source, user, src_ip`
+   - **การเพิ่มพูนข้อมูล (Enrichment):** ระบบจะทำการแปลง `src_ip` ด้วยฐานข้อมูล GeoIP (`geoip-lite`) เพื่อเพิ่มข้อมูลประเทศและเมืองเข้าไปใน Log โดยอัตโนมัติ
+   - **การตรวจสอบประสิทธิภาพ (Observability):** ระบบมี Express Middleware เพื่อตรวจสอบและบันทึกเวลาที่ใช้ในการประมวลผล (Execution Latency) ของแต่ละ API Request เพื่อใช้ในการวิเคราะห์ความซับซ้อนของอัลกอริทึม (Time Complexity)
+3. **ชั้นจัดเก็บข้อมูล (Storage Layer - True Multi-tenant Architecture)**
+   - Backend จะประเมิน Tenant ของแต่ละ Log และจัดเก็บลงใน OpenSearch โดยใช้หลักการสร้าง Index แบบพลวัต (Dynamic Indexing) ตาม Tenant (เช่น `log-demoa`, `log-demob`) เพื่อรับประกันการแยกส่วนและรักษาความปลอดภัยของข้อมูล
+4. **ชั้นสอบถามและแสดงผลข้อมูล (Query & Visualization Layer)**
+   - ผู้ใช้เข้าใช้งานผ่านหน้าจอ Frontend ที่พัฒนาด้วย React
+   - ระบบมีการควบคุมสิทธิ์การเข้าถึงแบบ Role-Based Access Control (RBAC) หากผู้ใช้ล็อกอินในฐานะ `viewer` ของ `demoA` ระบบ Backend จะจำกัดขอบเขตการค้นหาไว้ที่ Index `log-demoa` เท่านั้น ป้องกันการเข้าถึงข้อมูลข้าม Tenant โดยเด็ดขาด
+5. **ระบบทำงานเบื้องหลัง (Background Jobs)**
+   - **Alerting Cron:** ทำงานทุก 1 นาที เพื่อตรวจสอบฐานข้อมูลเทียบกับเงื่อนไขด้านความปลอดภัย (เช่น login_failed > 5 ครั้ง) หากพบการละเมิดจะสร้างบันทึกการแจ้งเตือน
+   - **Retention Cron:** ทำงานทุกเที่ยงคืน เพื่อลบ Log ที่มีอายุเกิน 7 วัน เพื่อบริหารจัดการพื้นที่จัดเก็บและให้สอดคล้องกับนโยบายการเก็บรักษาข้อมูล
