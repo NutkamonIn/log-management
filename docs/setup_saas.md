@@ -1,8 +1,8 @@
-#  คู่มือการ Deploy แบบ SaaS/Cloud
+# คู่มือการ Deploy แบบ SaaS/Cloud
 
 เอกสารนี้อธิบายวิธีการนำระบบ **Log Management** ขึ้นไปติดตั้งบน Cloud Server สาธารณะ (เช่น AWS EC2, DigitalOcean, Azure) เพื่อเปิดให้บริการในรูปแบบ SaaS (Software as a Service)
 
-##  ความต้องการของระบบ (System Requirements)
+## ความต้องการของระบบ (System Requirements)
 - **OS:** Ubuntu 22.04 LTS (หรือใหม่กว่า)
 - **CPU:** ขั้นต่ำ 4 vCPU
 - **RAM:** ขั้นต่ำ 8 GB
@@ -12,7 +12,7 @@
 
 ---
 
-##  ขั้นตอนการติดตั้ง (Deployment Steps)
+## ขั้นตอนการติดตั้ง (Deployment Steps)
 
 1. **โคลน Source Code ลงใน Server**
    ```bash
@@ -41,22 +41,24 @@
 
 ---
 
-##  การเชื่อมต่อแบบความปลอดภัยสูง (HTTPS/TLS)
+## การเชื่อมต่อแบบความปลอดภัยสูง (HTTPS/TLS)
 
-ระบบนี้ถูกออกแบบมาพร้อมกับ **Self-signed SSL Certificate** โดยอัตโนมัติ ซึ่งถูกสร้างขึ้นในขั้นตอนการ Build Docker Image (ผ่าน OpenSSL ใน Nginx Container)
+ระบบรองรับการตั้งค่าใบรับรองความปลอดภัย 2 รูปแบบ:
 
-- **เข้าใช้งานระบบผ่านเว็บเบราว์เซอร์:**  
-  ไปที่ URL ของ Server ของคุณ (หรือ Public IP) ด้วยโปรโตคอล `https://`
-  ```
-  https://<YOUR_SERVER_PUBLIC_IP>
-  ```
-  
-- **หมายเหตุสำหรับ Self-signed Certificate:**  
-  ครั้งแรกที่เข้าใช้งาน บราวเซอร์จะแจ้งเตือนว่า "Your connection is not private" (การเชื่อมต่อไม่เป็นส่วนตัว) เนื่องจากเป็นใบรับรองที่เราสร้างขึ้นเอง ให้กด **Advanced** -> **Proceed to [IP] (unsafe)** เพื่อเข้าสู่ระบบ
+1. **Self-signed SSL Certificate (สำหรับทดสอบด้วย IP):** 
+   ระบบจะสร้างขึ้นอัตโนมัติเมื่อรันผ่าน Docker ครั้งแรก หากเข้าใช้งานผ่าน IP จะพบหน้าต่างแจ้งเตือน "Your connection is not private" ให้กดยอมรับความเสี่ยงเพื่อเข้าสู่ระบบ
+
+2. **Let's Encrypt SSL (สำหรับผู้ที่มีโดเมนจริง เช่น demo-labs.site):**
+   เพื่อความสมบูรณ์แบบระดับ Production แนะนำให้จดโดเมน ชี้ DNS A Record มาที่ Server IP จากนั้นใช้ Nginx และ Certbot ในการขอใบรับรองฟรี
+   ```bash
+   sudo apt install certbot python3-certbot-nginx
+   sudo certbot --nginx -d logs.demo-labs.site
+   ```
+   ซึ่งจะทำให้ระบบของคุณมีหน้ากุญแจสีเขียวสมบูรณ์แบบ 100%
 
 ---
 
-##  การรับส่ง Log ไปยัง Cloud Server
+## การรับส่ง Log ไปยัง Cloud Server
 
 ในฝั่งของลูกค้า (Client) ที่ต้องการยิง Log มารวมที่ Cloud Server ของเรา ให้เปลี่ยน IP จาก `127.0.0.1` เป็น Public IP ของ Server นี้:
 
