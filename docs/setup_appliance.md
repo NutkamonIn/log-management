@@ -1,18 +1,19 @@
 # Local Appliance Setup Guide
 
-This document explains how to install and run the Log Management system as a local appliance or on a single Virtual Machine. It is ideal for Proof of Concept (PoC) testing and development.
+This document explains how to install and run the Log Management system as a local appliance or on a single virtual machine. It is ideal for Proof of Concept (PoC) testing and development.
 
 ## Prerequisites
-- **Operating System (OS):** Ubuntu 22.04 LTS or higher (recommended for appliance setup)
+
+- **Operating System:** Ubuntu 22.04 LTS or higher (recommended for appliance setup)
 - **CPU:** Minimum 4 vCPU
 - **Memory:** Minimum 8 GB RAM
 - **Storage:** Minimum 40 GB
-- **Network Ports:** Ports 80 (HTTP), 443 (HTTPS), and 5141/5142 (UDP Syslog) must be open on the Firewall.
+- **Network Ports:** Ports 80 (HTTP), 443 (HTTPS), and 5141/5142 (UDP Syslog) must be open on the firewall.
 - **Software:** Docker Engine and Docker Compose (Node.js is not required if running entirely via containers).
 
 ## Installation and Execution
 
-The deployment process has been automated via Batch Scripts to enhance the Developer Experience.
+The deployment process has been automated via batch scripts to enhance the developer experience.
 
 1. **Navigate to the Project Directory:**
    Open PowerShell or Command Prompt and enter:
@@ -24,10 +25,10 @@ The deployment process has been automated via Batch Scripts to enhance the Devel
    ```powershell
    .\start.bat
    ```
-   *This command will build the Docker Images and start all services. Please wait until the system displays the "System is running!" notification.*
+   *This command will build the Docker images and start all services. Please wait until the system displays the "System is running!" notification.*
 
 3. **Service Initialization:**
-   OpenSearch requires approximately 30 seconds to fully initialize. The Backend service is configured to wait until OpenSearch is healthy before starting other processes.
+   OpenSearch requires approximately 30 seconds to fully initialize. The backend service is configured to wait until OpenSearch is healthy before starting other processes.
 
 4. **Accessing the System:**
    - **Frontend UI (Dashboard & Logs Explorer):** `http://localhost` or `https://localhost` (Accept the self-signed certificate warning)
@@ -35,7 +36,7 @@ The deployment process has been automated via Batch Scripts to enhance the Devel
    - **OpenSearch (Raw Access):** `http://localhost:9200`
    - **OpenSearch Dashboards:** `http://localhost:5601`
 
-   *Note: API call latency (Observability metrics) can be monitored in the Backend terminal window.*
+   *Note: API call latency (observability metrics) can be monitored in the backend terminal window.*
 
    *Authentication Credentials:*
    - Administrator: `admin` / `adminpassword`
@@ -46,13 +47,13 @@ The deployment process has been automated via Batch Scripts to enhance the Devel
 
 ## Data Seeding
 
-To test the Dashboard functionality, sample data must be seeded into the system.
+To test the dashboard functionality, sample data must be seeded into the system.
 
 1. **Simulating Data via HTTP API (JSON):**
    ```powershell
    npx tsx ingest/src/simulate_logs.ts local
    ```
-   *This script simulates log generation from CrowdStrike, AWS, Microsoft AD, and Custom APIs.*
+   *This script simulates log generation from CrowdStrike, AWS, Microsoft AD, and custom APIs.*
 
 2. **Simulating Data via Syslog (UDP 5141/5142):**
    ```powershell
@@ -70,13 +71,13 @@ To test the Dashboard functionality, sample data must be seeded into the system.
 
 ## System Teardown
 
-- **Stop all services:** 
+- **Stop all services:**
   ```powershell
   .\stop.bat
   ```
   *(Stops the containers while retaining data in OpenSearch)*
 
-- **Wipe database:** 
+- **Wipe database:**
   ```powershell
   .\clean.bat
   ```

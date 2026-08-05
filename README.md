@@ -2,8 +2,7 @@
 
 This project is a Proof of Concept (PoC) for a Centralized Log Management system that supports Multi-tenant architecture and high Scalability. It is designed to collect, normalize, store, and visualize log data from various sources, including network devices (Firewalls, Routers) and enterprise applications (Microsoft AD, AWS, CrowdStrike).
 
-## System Architecture
-The architecture is designed to handle high-throughput log ingestion and features Role-Based Access Control (RBAC) to ensure strict data isolation between tenants.
+## Architecture
 For detailed architectural documentation, please refer to: [docs/architecture.md](docs/architecture.md)
 
 ## Project Structure
@@ -19,6 +18,7 @@ The repository is divided into three main components:
 - **Dynamic Field Extraction:** The system scans the JSON structure of incoming logs, identifies variable types (String, Number, IP), and dynamically presents them as selectable columns and filters (Schema-less Log Explorer).
 - **Time Range Filtering:** Users can accurately filter data and visualize Histograms based on specific time ranges (e.g., Last 15 minutes, 1 hour, 24 hours) for retroactive traffic analysis.
 - **Continuous Integration (CI/CD):** GitHub Actions are configured to run automated Unit Tests and Frontend build checks upon every code modification.
+- **Automated Alerting (Sliding Window):** A background cron job continuously monitors the last 5 minutes of data using a Sliding Window algorithm to detect anomalies, such as brute-force attacks, and generate high-severity alerts.
 - **Security Hardening:** The infrastructure is protected by an Nginx Reverse Proxy, supports HTTPS (TLS) encryption, utilizes JWT authentication, and implements robust authorization mechanisms.
 
 ## Deployment Guides
