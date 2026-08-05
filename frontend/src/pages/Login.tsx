@@ -12,9 +12,18 @@ export default function Login() {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        const trimmedUsername = username.trim();
+        const trimmedPassword = password.trim();
+
+        if (!trimmedUsername || !trimmedPassword) {
+            setError('Username and password cannot be empty or just spaces.');
+            return;
+        }
+
         setIsLoading(true);
         try {
-            const res = await axios.post('/api/v1/login', { username, password });
+            const res = await axios.post('/api/v1/login', { username: trimmedUsername, password: trimmedPassword });
             sessionStorage.setItem('token', res.data.access_token);
             navigate('/');
         } catch (err) {
@@ -52,6 +61,10 @@ export default function Login() {
                                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
+                                onPaste={(e) => {
+                                    e.preventDefault();
+                                    setError('Pasting is not allowed.');
+                                }}
                                 required
                             />
                         </div>
@@ -66,6 +79,10 @@ export default function Login() {
                                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                onPaste={(e) => {
+                                    e.preventDefault();
+                                    setError('Pasting is not allowed.');
+                                }}
                                 required
                             />
                         </div>

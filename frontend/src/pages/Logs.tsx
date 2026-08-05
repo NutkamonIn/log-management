@@ -3,6 +3,12 @@ import axios from 'axios';
 import { Search, ChevronRight, ChevronDown, Calendar, RefreshCw, List, AlignLeft, Filter, X } from 'lucide-react';
 import { BarChart, Bar, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis } from 'recharts';
 import Sidebar from '../components/Sidebar';
+import TimeRangePicker from '../components/TimeRangePicker';
+import type { TimeRangeValue } from '../components/TimeRangePicker';
+import AutoRefreshToggle from '../components/AutoRefreshToggle';
+import SeverityBadge from '../components/SeverityBadge';
+import ExportMenu from '../components/ExportMenu';
+import { downloadAsJson, exportToCsv } from '../utils/export';
 
 export default function Logs() {
     const [logs, setLogs] = useState<any[]>([]);
@@ -13,15 +19,22 @@ export default function Logs() {
 
     const [fieldFilter, setFieldFilter] = useState('');
     const [selectedFields, setSelectedFields] = useState<string[]>([]);
-    const [timeRange, setTimeRange] = useState('15m');
+    const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'quick', value: '24h' });
     const [availableFields, setAvailableFields] = useState<{ name: string, type: string }[]>([]);
-    const [autoRefresh, setAutoRefresh] = useState('off');
+    const [autoRefresh, setAutoRefresh] = useState(true);
 
     const fetchLogs = async (searchQuery = '') => {
         setIsLoading(true);
         try {
             const token = sessionStorage.getItem('token');
-            const res = await axios.get(`/api/v1/search?q=${searchQuery}&timeRange=${timeRange}`, {
+            let url = `/api/v1/search?q=${searchQuery}`;
+            if (timeRange.type === 'quick') {
+                url += `&timeRange=${timeRange.value}`;
+            } else if (timeRange.type === 'custom' && timeRange.startTime && timeRange.endTime) {
+                url += `&startTime=${timeRange.startTime}&endTime=${timeRange.endTime}`;
+            }
+
+            const res = await axios.get(url, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = res.data.data || [];
@@ -76,14 +89,20 @@ export default function Logs() {
 
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>;
-        if (autoRefresh !== 'off') {
-            const ms = autoRefresh === '5s' ? 5000 : autoRefresh === '10s' ? 10000 : 30000;
+        if (autoRefresh) {
             interval = setInterval(() => {
                 // Background fetch (do not trigger loading spinner to avoid flashing)
                 const bgFetch = async () => {
                     try {
                         const token = sessionStorage.getItem('token');
-                        const res = await axios.get(`/api/v1/search?q=${query}&timeRange=${timeRange}`, {
+                        let url = `/api/v1/search?q=${query}`;
+                        if (timeRange.type === 'quick') {
+                            url += `&timeRange=${timeRange.value}`;
+                        } else if (timeRange.type === 'custom' && timeRange.startTime && timeRange.endTime) {
+                            url += `&startTime=${timeRange.startTime}&endTime=${timeRange.endTime}`;
+                        }
+
+                        const res = await axios.get(url, {
                             headers: { Authorization: `Bearer ${token}` }
                         });
                         const data = res.data.data || [];
@@ -109,12 +128,40 @@ export default function Logs() {
                     }
                 };
                 bgFetch();
-            }, ms);
+            }, 5000); // 5 seconds
         }
         return () => {
             if (interval) clearInterval(interval);
         };
     }, [autoRefresh, timeRange, query]);
+
+    const handleExportCsv = () => {
+        if (!logs || logs.length === 0) return;
+        let data;
+        if (selectedFields.length > 0) {
+            data = logs.map((l: any) => {
+                const src = l._source;
+                const row: Record<string, any> = { Timestamp: src['@timestamp'] ? new Date(src['@timestamp']).toLocaleString() : '' };
+                selectedFields.forEach(field => {
+                    row[field] = src[field] !== undefined ? src[field] : '';
+                });
+                return row;
+            });
+        } else {
+            data = logs.map((l: any) => {
+                const src = { ...l._source };
+                if (src['@timestamp']) src['@timestamp'] = new Date(src['@timestamp']).toLocaleString();
+                // Stringify nested objects so they don't appear as [object Object] in CSV
+                Object.keys(src).forEach(key => {
+                    if (typeof src[key] === 'object' && src[key] !== null) {
+                        src[key] = JSON.stringify(src[key]);
+                    }
+                });
+                return src;
+            });
+        }
+        exportToCsv(data, `logs_${new Date().toISOString().replace(/[:.]/g, '-')}.csv`);
+    };
 
     const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') fetchLogs(query);
@@ -157,29 +204,10 @@ export default function Logs() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
-                        <select
-                            className="bg-white border border-slate-300 text-slate-700 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 px-3 py-2 flex-1 md:flex-none"
-                            value={timeRange}
-                            onChange={(e) => setTimeRange(e.target.value)}
-                        >
-                            <option value="15m">Last 15 minutes</option>
-                            <option value="1h">Last 1 hour</option>
-                            <option value="24h">Last 24 hours</option>
-                            <option value="7d">Last 7 days</option>
-                        </select>
-                        <div className="flex items-center border border-slate-300 bg-white rounded-md px-2 shrink-0">
-                            <span className="text-xs text-slate-500 font-medium mr-1 hidden sm:inline">Refresh:</span>
-                            <select
-                                className="bg-transparent text-slate-700 text-sm focus:outline-none py-2 cursor-pointer font-medium"
-                                value={autoRefresh}
-                                onChange={(e) => setAutoRefresh(e.target.value)}
-                            >
-                                <option value="off">Off</option>
-                                <option value="5s">5s</option>
-                                <option value="10s">10s</option>
-                                <option value="30s">30s</option>
-                            </select>
-                        </div>
+                        <TimeRangePicker onChange={(range) => setTimeRange(range)} />
+                        
+                        <AutoRefreshToggle isOn={autoRefresh} onToggle={setAutoRefresh} />
+                        
                         <button
                             onClick={() => fetchLogs(query)}
                             className="p-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 bg-white shrink-0"
@@ -187,6 +215,14 @@ export default function Logs() {
                         >
                             <RefreshCw className="w-4 h-4 text-slate-500" />
                         </button>
+
+                        <ExportMenu 
+                            onExportJson={() => {
+                                if (logs.length > 0) downloadAsJson(logs.map((l: any) => l._source), `logs_${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+                            }}
+                            onExportCsv={handleExportCsv}
+                            disabled={logs.length === 0}
+                        />
                     </div>
                 </div>
 
@@ -313,7 +349,11 @@ export default function Logs() {
                                                     {selectedFields.length > 0 ? (
                                                         selectedFields.map(field => (
                                                             <div key={field} className="flex-1 px-4 py-2 text-slate-800 font-mono text-[13px] truncate overflow-hidden">
-                                                                {log._source[field] !== undefined ? String(log._source[field]) : '-'}
+                                                                {field === 'severity' && log._source[field] !== undefined ? (
+                                                                    <SeverityBadge severity={log._source[field]} />
+                                                                ) : (
+                                                                    log._source[field] !== undefined ? String(log._source[field]) : '-'
+                                                                )}
                                                             </div>
                                                         ))
                                                     ) : (
@@ -348,15 +388,6 @@ export default function Logs() {
                                                                         ))}
                                                                     </tbody>
                                                                 </table>
-                                                            </div>
-                                                        </div>
-
-                                                        <div>
-                                                            <div className="text-xs font-semibold text-slate-700 mb-1">JSON</div>
-                                                            <div className="bg-slate-900 rounded-md p-4 overflow-x-auto">
-                                                                <pre className="text-[13px] text-green-400 font-mono leading-relaxed">
-                                                                    {JSON.stringify(log._source, null, 2)}
-                                                                </pre>
                                                             </div>
                                                         </div>
                                                     </div>

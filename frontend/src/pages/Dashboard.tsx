@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Activity, ShieldAlert, Users } from 'lucide-react';
+import { downloadAsJson, exportToCsv } from '../utils/export';
+import ExportMenu from '../components/ExportMenu';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import Sidebar from '../components/Sidebar';
 import StatCard from '../components/StatCard';
+import TimeRangePicker from '../components/TimeRangePicker';
+import type { TimeRangeValue } from '../components/TimeRangePicker';
+import AutoRefreshToggle from '../components/AutoRefreshToggle';
+
 
 interface DashboardStats {
     total_events: number;
@@ -11,21 +17,43 @@ interface DashboardStats {
     top_events: { key: string; doc_count: number }[];
     top_users: { key: string; doc_count: number }[];
     timeline: { key_as_string: string; doc_count: number }[];
+    recent_alerts: any[];
 }
 
+const getInitialTenant = () => {
+    const token = sessionStorage.getItem('token');
+    if (!token) return 'all';
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.tenant || 'all';
+    } catch {
+        return 'all';
+    }
+};
+
 export default function Dashboard() {
+    const userTenant = getInitialTenant();
     const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [timeRange, setTimeRange] = useState('24h');
-    const [tenantFilter, setTenantFilter] = useState('all');
-    const [autoRefresh, setAutoRefresh] = useState('off');
+    const [timeRange, setTimeRange] = useState<TimeRangeValue>({ type: 'quick', value: '24h' });
+    const [tenantFilter, setTenantFilter] = useState(userTenant === 'all' ? 'all' : userTenant);
+    const [autoRefresh, setAutoRefresh] = useState(true);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
     const fetchStats = async () => {
         try {
             const token = sessionStorage.getItem('token');
-            const res = await axios.get(`/api/v1/dashboard/stats?timeRange=${timeRange}&tenant=${tenantFilter}`, {
+            let url = `/api/v1/dashboard/stats?tenant=${tenantFilter}`;
+            if (timeRange.type === 'quick') {
+                url += `&timeRange=${timeRange.value}`;
+            } else if (timeRange.type === 'custom' && timeRange.startTime && timeRange.endTime) {
+                url += `&startTime=${timeRange.startTime}&endTime=${timeRange.endTime}`;
+            }
+
+            const res = await axios.get(url, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStats(res.data.data);
+            setLastUpdated(new Date());
         } catch (error) {
             console.error("Failed to fetch stats", error);
         }
@@ -37,16 +65,26 @@ export default function Dashboard() {
 
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>;
-        if (autoRefresh !== 'off') {
-            const ms = autoRefresh === '5s' ? 5000 : autoRefresh === '10s' ? 10000 : 30000;
+        if (autoRefresh) {
             interval = setInterval(() => {
                 fetchStats();
-            }, ms);
+            }, 5000); // 5 seconds
         }
         return () => {
             if (interval) clearInterval(interval);
         };
     }, [autoRefresh, timeRange, tenantFilter]);
+
+    const handleExportCsv = () => {
+        if (!stats) return;
+        const data = [
+            { Metric: 'Total Events', Value: stats.total_events },
+            ...stats.top_events.map(e => ({ Metric: `Top Event: ${e.key}`, Value: e.doc_count })),
+            ...stats.top_ips.map(e => ({ Metric: `Top IP: ${e.key}`, Value: e.doc_count })),
+            ...stats.top_users.map(e => ({ Metric: `Top User: ${e.key}`, Value: e.doc_count }))
+        ];
+        exportToCsv(data, `dashboard_stats_${new Date().toISOString().replace(/[:.]/g, '-')}.csv`);
+    };
 
     return (
         <div className="flex flex-col md:flex-row h-screen bg-slate-50 font-sans overflow-hidden">
@@ -61,40 +99,35 @@ export default function Dashboard() {
 
                     {/* Filters */}
                     <div className="flex flex-wrap gap-3 mt-4 md:mt-0 items-center">
+                        {lastUpdated && (
+                            <span className="text-xs text-slate-400 font-medium mr-2">
+                                Last updated: {lastUpdated.toLocaleTimeString()}
+                            </span>
+                        )}
                         <select
-                            className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-sm"
+                            className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-sm disabled:bg-slate-100 disabled:text-slate-400"
                             value={tenantFilter}
                             onChange={(e) => setTenantFilter(e.target.value)}
+                            disabled={userTenant !== 'all'}
                         >
-                            <option value="all">All Tenants</option>
-                            <option value="demoA">Tenant: demoA</option>
-                            <option value="demoB">Tenant: demoB</option>
+                            {userTenant === 'all' ? (
+                                <>
+                                    <option value="all">All Tenants</option>
+                                    <option value="demoA">Tenant: demoA</option>
+                                    <option value="demoB">Tenant: demoB</option>
+                                </>
+                            ) : (
+                                <option value={userTenant}>Tenant: {userTenant}</option>
+                            )}
                         </select>
-                        <select
-                            className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-sm"
-                            value={timeRange}
-                            onChange={(e) => setTimeRange(e.target.value)}
-                        >
-                            <option value="1h">Last 1 Hour</option>
-                            <option value="24h">Last 24 Hours</option>
-                            <option value="7d">Last 7 Days</option>
-                        </select>
-                        <div className="flex items-center border border-slate-200 bg-white rounded-lg shadow-sm px-2">
-                            <span className="text-xs text-slate-500 font-medium mr-2 ml-1">Auto-refresh:</span>
-                            <select
-                                className="bg-transparent text-slate-700 text-sm focus:outline-none p-2.5 cursor-pointer font-medium"
-                                value={autoRefresh}
-                                onChange={(e) => setAutoRefresh(e.target.value)}
-                            >
-                                <option value="off">Off</option>
-                                <option value="5s">5s</option>
-                                <option value="10s">10s</option>
-                                <option value="30s">30s</option>
-                            </select>
-                        </div>
+                        
+                        <TimeRangePicker onChange={(range) => setTimeRange(range)} />
+                        
+                        <AutoRefreshToggle isOn={autoRefresh} onToggle={setAutoRefresh} />
+
                         <button
                             onClick={() => fetchStats()}
-                            className="p-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 bg-white shadow-sm flex items-center justify-center h-10 w-10"
+                            className="p-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 bg-white shadow-sm flex items-center justify-center h-10 w-10 transition-colors"
                             title="Refresh Data"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500">
@@ -102,6 +135,14 @@ export default function Dashboard() {
                                 <path d="M3 3v5h5"></path>
                             </svg>
                         </button>
+
+                        <ExportMenu 
+                            onExportJson={() => {
+                                if (stats) downloadAsJson(stats, `dashboard_stats_${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+                            }}
+                            onExportCsv={handleExportCsv}
+                            disabled={!stats}
+                        />
                     </div>
                 </div>
 
@@ -215,7 +256,6 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     );

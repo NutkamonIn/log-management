@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Search, Target, Clock, Activity, ShieldAlert, Crosshair, Users, Server } from 'lucide-react';
+import { Search, Target, Clock, Activity, ShieldAlert, Crosshair, Users, Server, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { downloadAsJson, exportToCsv } from '../utils/export';
+import ExportMenu from '../components/ExportMenu';
 import Sidebar from '../components/Sidebar';
 import StatCard from '../components/StatCard';
+import SeverityBadge from '../components/SeverityBadge';
 
 interface InvestigateProfile {
     total_events: number;
@@ -14,6 +17,7 @@ interface InvestigateProfile {
     related_users: { key: string; doc_count: number }[];
     related_hosts: { key: string; doc_count: number }[];
     timeline: { key_as_string: string; doc_count: number }[];
+    recent_logs: any[];
 }
 
 export default function Investigate() {
@@ -22,15 +26,12 @@ export default function Investigate() {
     const [profile, setProfile] = useState<InvestigateProfile | null>(null);
     const [error, setError] = useState('');
 
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!entity.trim()) return;
-
+    const fetchProfile = async (searchEntity: string) => {
         setIsLoading(true);
         setError('');
         try {
             const token = sessionStorage.getItem('token');
-            const res = await axios.get(`/api/v1/investigate?entity=${encodeURIComponent(entity)}`, {
+            const res = await axios.get(`/api/v1/investigate?entity=${encodeURIComponent(searchEntity)}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setProfile(res.data.data);
@@ -40,6 +41,64 @@ export default function Investigate() {
             setProfile(null);
         }
         setIsLoading(false);
+    };
+
+    React.useEffect(() => {
+        fetchProfile('');
+    }, []);
+
+    const handleSearch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        fetchProfile(entity.trim());
+    };
+
+    const handleExportCsv = () => {
+        if (!profile) return;
+        
+        const data: any[] = [];
+        
+        // Summary
+        data.push({ Section: 'Summary', Key: 'Total Occurrences', Value: profile.total_events });
+        data.push({ Section: 'Summary', Key: 'First Seen', Value: profile.first_seen ? new Date(profile.first_seen).toLocaleString() : 'N/A' });
+        data.push({ Section: 'Summary', Key: 'Last Seen', Value: profile.last_seen ? new Date(profile.last_seen).toLocaleString() : 'N/A' });
+        
+        // Related Users
+        profile.related_users.forEach(e => {
+            data.push({ Section: 'Related Users', Key: e.key, Value: e.doc_count });
+        });
+        
+        // Related IPs
+        profile.related_ips.forEach(e => {
+            data.push({ Section: 'Related IPs', Key: e.key, Value: e.doc_count });
+        });
+        
+        // Related Hosts
+        profile.related_hosts.forEach(e => {
+            data.push({ Section: 'Related Hosts', Key: e.key, Value: e.doc_count });
+        });
+        
+        // Top Events
+        profile.top_events.forEach(e => {
+            data.push({ Section: 'Top Events', Key: e.key, Value: e.doc_count });
+        });
+        
+
+        
+        // Threat Events
+        if (profile.recent_logs && profile.recent_logs.length > 0) {
+            profile.recent_logs.forEach((log: any) => {
+                const src = log._source || log;
+                data.push({ 
+                    Section: 'Threat Events', 
+                    Timestamp: src['@timestamp'] ? new Date(src['@timestamp']).toLocaleString() : '',
+                    Severity: src.severity || '',
+                    'Event Type': src.event_type || '',
+                    'Message / Details': src.message || JSON.stringify(src)
+                });
+            });
+        }
+        
+        exportToCsv(data, `investigate_${entity}_${new Date().toISOString().replace(/[:.]/g, '-')}.csv`);
     };
 
     return (
@@ -74,6 +133,13 @@ export default function Investigate() {
                         >
                             {isLoading ? 'Investigating...' : 'Investigate'}
                         </button>
+                        <ExportMenu 
+                            onExportJson={() => {
+                                if (profile) downloadAsJson(profile, `investigate_${entity || 'default'}_${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+                            }}
+                            onExportCsv={handleExportCsv}
+                            disabled={!profile}
+                        />
                     </form>
                     {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
                 </div>
@@ -213,6 +279,51 @@ export default function Investigate() {
                                     <div className="h-full flex items-center justify-center text-slate-400">No timeline data available</div>
                                 )}
                             </div>
+                        </div>
+                        
+                        {/* High Severity Events Table */}
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-12">
+                            <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center">
+                                <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
+                                Threat Events (Sorted by Severity)
+                            </h3>
+                            {profile.recent_logs && profile.recent_logs.length > 0 ? (
+                                <div className="overflow-x-auto rounded-lg border border-slate-200">
+                                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                        <thead className="bg-slate-50 text-slate-600 font-semibold uppercase text-xs tracking-wider">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left w-48">Timestamp</th>
+                                                <th className="px-4 py-3 text-left w-24">Severity</th>
+                                                <th className="px-4 py-3 text-left w-48">Event Type</th>
+                                                <th className="px-4 py-3 text-left">Message / Details</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-slate-100">
+                                            {profile.recent_logs.map((log: any, i: number) => (
+                                                <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-4 py-3 text-slate-500 font-mono text-[12px] whitespace-nowrap">
+                                                        {new Date(log['@timestamp']).toLocaleString()}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <SeverityBadge severity={log.severity} />
+                                                    </td>
+                                                    <td className="px-4 py-3 text-slate-700 font-medium">
+                                                        {log.event_type || log.rule_name || '-'}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-slate-600 font-mono text-[13px] truncate max-w-md">
+                                                        {log.message || log.description || JSON.stringify(log)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="text-center py-10 bg-slate-50 rounded-lg border border-slate-100">
+                                    <ShieldAlert className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                                    <p className="text-slate-500 font-medium">No severe events found for this entity.</p>
+                                </div>
+                            )}
                         </div>
 
                     </div>

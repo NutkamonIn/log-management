@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { ShieldAlert, AlertTriangle } from 'lucide-react';
+import { ShieldAlert, Clock } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
+import SeverityBadge from '../components/SeverityBadge';
+import AutoRefreshToggle from '../components/AutoRefreshToggle';
 
 interface AlertLog {
     "@timestamp": string;
@@ -17,7 +19,8 @@ interface AlertLog {
 export default function Alerts() {
     const [alerts, setAlerts] = useState<AlertLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [autoRefresh, setAutoRefresh] = useState('off');
+    const [autoRefresh, setAutoRefresh] = useState(true);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
     const fetchAlerts = async (isBackground = false) => {
         if (!isBackground) setIsLoading(true);
@@ -27,6 +30,7 @@ export default function Alerts() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setAlerts(res.data.data);
+            setLastUpdated(new Date());
         } catch (error) {
             console.error("Failed to fetch alerts", error);
         } finally {
@@ -40,11 +44,10 @@ export default function Alerts() {
 
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>;
-        if (autoRefresh !== 'off') {
-            const ms = autoRefresh === '5s' ? 5000 : autoRefresh === '10s' ? 10000 : 30000;
+        if (autoRefresh) {
             interval = setInterval(() => {
                 fetchAlerts(true);
-            }, ms);
+            }, 5000);
         }
         return () => {
             if (interval) clearInterval(interval);
@@ -66,18 +69,23 @@ export default function Alerts() {
                         </div>
                     </div>
 
-                    <div className="flex items-center border border-slate-200 bg-white rounded-lg shadow-sm px-2">
-                        <span className="text-xs text-slate-500 font-medium mr-2 ml-1">Auto-refresh:</span>
-                        <select
-                            className="bg-transparent text-slate-700 text-sm focus:outline-none p-2.5 cursor-pointer font-medium"
-                            value={autoRefresh}
-                            onChange={(e) => setAutoRefresh(e.target.value)}
+                    <div className="flex items-center space-x-4">
+                        {lastUpdated && (
+                            <div className="flex items-center text-xs text-slate-400 font-medium">
+                                <Clock className="w-3 h-3 mr-1" />
+                                Last updated: {lastUpdated.toLocaleTimeString()}
+                            </div>
+                        )}
+                        <AutoRefreshToggle isOn={autoRefresh} onToggle={setAutoRefresh} />
+                        <button
+                            onClick={() => fetchAlerts()}
+                            className="p-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 bg-white shadow-sm flex items-center justify-center h-10 w-10 transition-colors"
+                            title="Refresh Data"
                         >
-                            <option value="off">Off</option>
-                            <option value="5s">5s</option>
-                            <option value="10s">10s</option>
-                            <option value="30s">30s</option>
-                        </select>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -115,10 +123,7 @@ export default function Alerts() {
                                                 {new Date(alert["@timestamp"]).toLocaleString()}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                                                    <AlertTriangle className="w-3 h-3" />
-                                                    <span>High ({alert.severity})</span>
-                                                </span>
+                                                <SeverityBadge severity={alert.severity} />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-700">
                                                 {alert.src_ip}
