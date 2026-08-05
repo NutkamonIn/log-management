@@ -5,9 +5,10 @@ const https = require('https');
 // node tests/test_bruteforce.js local   -> To send to localhost
 // node tests/test_bruteforce.js         -> To send to AWS
 const target = process.argv[2];
+const isDocker = target === 'docker';
 const isLocal = target === 'local';
-const API_URL = isLocal ? 'http://localhost:8000/api/v1' : 'https://log.demo-labs.site/api/v1';
-const client = isLocal ? http : https;
+const API_URL = isDocker ? 'http://backend:8000/api/v1' : isLocal ? 'http://localhost:8000/api/v1' : 'https://log.demo-labs.site/api/v1';
+const client = (isDocker || isLocal) ? http : https;
 
 const loginData = JSON.stringify({ username: 'admin', password: 'adminpassword' });
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Configuration
-OS_URL="http://opensearch:9200"
-OSD_URL="http://opensearch-dashboards:5601"
+OS_URL="https://admin:admin@opensearch:9200"
+OSD_URL="http://admin:admin@opensearch-dashboards:5601"
 BACKEND_URL="http://backend:8000"
 
 echo "=========================================="
@@ -11,14 +11,14 @@ echo "=========================================="
 
 # 1. Wait for OpenSearch
 echo "Waiting for OpenSearch to be ready..."
-until curl -s "$OS_URL" > /dev/null; do
+until curl -s -k "$OS_URL" > /dev/null; do
   sleep 5
 done
 echo "OpenSearch is UP!"
 
 # 2. Wait for OpenSearch Dashboards
 echo "Waiting for OpenSearch Dashboards to be ready..."
-until curl -s "$OSD_URL/api/status" > /dev/null; do
+until curl -s -k "$OSD_URL/api/status" > /dev/null; do
   sleep 5
 done
 echo "OpenSearch Dashboards is UP!"
@@ -26,7 +26,7 @@ echo "OpenSearch Dashboards is UP!"
 # 3. Wait for Backend API
 echo "Waiting for Backend API to be ready..."
 # The backend might take an extra 30s as per server.ts, but we just check if it answers
-until curl -s "$BACKEND_URL" > /dev/null; do
+until curl -s -k "$BACKEND_URL" > /dev/null; do
   sleep 5
 done
 # Wait an additional 5 seconds to ensure express routes are fully mapped
@@ -35,7 +35,7 @@ echo "Backend API is UP!"
 
 # 4. Create OpenSearch Index Template
 echo "Creating OpenSearch Index Template for log-*"
-curl -s -X PUT "$OS_URL/_index_template/log-template" -H 'Content-Type: application/json' -d'
+curl -s -k -X PUT "$OS_URL/_index_template/log-template" -H 'Content-Type: application/json' -d'
 {
   "index_patterns": ["log-*"],
   "template": {
@@ -55,7 +55,7 @@ echo -e "\nIndex Template Created."
 
 # 5. Create OpenSearch Dashboards Index Pattern
 echo "Creating OpenSearch Dashboards Index Pattern..."
-curl -s -X POST "$OSD_URL/api/saved_objects/index-pattern/log-*" \
+curl -s -k -X POST "$OSD_URL/api/saved_objects/index-pattern/log-*" \
   -H "osd-xsrf: true" \
   -H "Content-Type: application/json" \
   -d '{
@@ -67,7 +67,7 @@ curl -s -X POST "$OSD_URL/api/saved_objects/index-pattern/log-*" \
 echo -e "\nIndex Pattern Created."
 
 echo "Setting Default Index Pattern..."
-curl -s -X POST "$OSD_URL/api/opensearch-dashboards/settings" \
+curl -s -k -X POST "$OSD_URL/api/opensearch-dashboards/settings" \
   -H "osd-xsrf: true" \
   -H "Content-Type: application/json" \
   -d '{"changes":{"defaultIndex":"log-*"}}'
@@ -79,14 +79,14 @@ cd ingest
 
 # Ensure we wait until backend is truly ready to accept requests (syslog service is up)
 echo "Running HTTP Log Simulator..."
-npx tsx src/simulate_logs.ts local
+npx tsx src/simulate_logs.ts docker
 
 echo "Running Syslog Simulator..."
-npx tsx src/simulate_syslog.ts local
+npx tsx src/simulate_syslog.ts docker
 cd ..
 
 echo "Running Brute-Force Attack Simulator..."
-node tests/test_bruteforce.js local
+node tests/test_bruteforce.js docker
 
 echo "=========================================="
 echo " Initialization Complete! "

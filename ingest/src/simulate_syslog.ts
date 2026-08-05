@@ -1,7 +1,7 @@
 import dgram from 'dgram';
 
 const target = process.argv[2];
-const HOST = target === 'local' ? '127.0.0.1' : 'log.demo-labs.site';
+const HOST = target === 'docker' ? 'backend' : target === 'local' ? '127.0.0.1' : 'log.demo-labs.site';
 const PORT_A = 5141; // Tenant demoA
 const PORT_B = 5142; // Tenant demoB
 const client = dgram.createSocket('udp4');
