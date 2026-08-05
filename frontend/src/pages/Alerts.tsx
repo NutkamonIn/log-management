@@ -36,9 +36,9 @@ export default function Alerts() {
     }, []);
 
     return (
-        <div className="flex min-h-screen bg-slate-50 font-sans">
+        <div className="flex flex-col md:flex-row h-screen bg-slate-50 font-sans overflow-hidden">
             <Sidebar />
-            <div className="flex-1 p-8 overflow-y-auto">
+            <div className="flex-1 p-4 md:p-8 overflow-y-auto">
                 <div className="mb-8 flex items-center space-x-3">
                     <div className="p-2 bg-red-100 text-red-600 rounded-lg">
                         <ShieldAlert className="w-6 h-6" />

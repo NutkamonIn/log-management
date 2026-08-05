@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/v1';
+const API_URL = 'https://log.demo-labs.site/api/v1';
 
 const crowdStrikeLog = {
     tenant: "demoA",

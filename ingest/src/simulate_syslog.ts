@@ -1,6 +1,6 @@
 import dgram from 'dgram';
 
-const HOST = '127.0.0.1';
+const HOST = 'log.demo-labs.site';
 const client = dgram.createSocket('udp4');
 
 // จำลองข้อมูลของลูกค้า demoA (ส่งไปพอร์ต 5141)

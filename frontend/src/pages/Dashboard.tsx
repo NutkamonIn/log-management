@@ -18,25 +18,26 @@ export default function Dashboard() {
     const [timeRange, setTimeRange] = useState('24h');
     const [tenantFilter, setTenantFilter] = useState('all');
 
+    const fetchStats = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`/api/v1/dashboard/stats?timeRange=${timeRange}&tenant=${tenantFilter}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setStats(res.data.data);
+        } catch (error) {
+            console.error("Failed to fetch stats", error);
+        }
+    };
+
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const res = await axios.get(`/api/v1/dashboard/stats?timeRange=${timeRange}&tenant=${tenantFilter}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setStats(res.data.data);
-            } catch (error) {
-                console.error("Failed to fetch stats", error);
-            }
-        };
         fetchStats();
     }, [timeRange, tenantFilter]);
 
     return (
-        <div className="flex min-h-screen bg-slate-50 font-sans">
+        <div className="flex flex-col md:flex-row h-screen bg-slate-50 font-sans overflow-hidden">
             <Sidebar />
-            <div className="flex-1 p-8 overflow-y-auto">
+            <div className="flex-1 p-4 md:p-8 overflow-y-auto">
                 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
                     <div>
@@ -45,7 +46,7 @@ export default function Dashboard() {
                     </div>
                     
                     {/* Filters */}
-                    <div className="flex space-x-3 mt-4 md:mt-0">
+                    <div className="flex space-x-3 mt-4 md:mt-0 items-center">
                         <select 
                             className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-sm"
                             value={tenantFilter}
@@ -64,6 +65,16 @@ export default function Dashboard() {
                             <option value="24h">Last 24 Hours</option>
                             <option value="7d">Last 7 Days</option>
                         </select>
+                        <button 
+                            onClick={() => fetchStats()}
+                            className="p-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 bg-white shadow-sm flex items-center justify-center h-10 w-10"
+                            title="Refresh Data"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
 

@@ -1,0 +1,11 @@
+{
+    "tenant": "demoA",
+    "source": "crowdstrike",
+    "event_type": "malware_detected",
+    "host": "WIN-SERVER-01",
+    "process": "unknown.exe",
+    "severity": 9,
+    "sha256": "8d34e2c8a...",
+    "action": "quarantine",
+    "raw": "{\"eventName\":\"Malware detected\",\"status\":\"blocked\"}"
+}

@@ -1,0 +1,3 @@
+<134>Aug 20 12:44:56 fw01 vendor=demo product=ngfw action=deny src=10.0.1.10 dst=8.8.8.8 spt=5353 dpt=53 proto=udp msg=DNS_blocked policy=Block-DNS
+<190>Aug 20 13:01:02 router01 if=ge-0/0/1 event=link-down mac=aa:bb:cc:dd:ee:ff reason=carrier-loss
+<134>Aug 20 14:25:00 fw02 vendor=demo product=ngfw action=deny src=172.16.0.5 dst=9.9.9.9 spt=12345 dpt=53 proto=udp msg=Malicious_DNS policy=Block-DNS

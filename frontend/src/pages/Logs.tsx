@@ -88,10 +88,8 @@ export default function Logs() {
     const filteredFields = availableFields.filter(f => f.name.toLowerCase().includes(fieldFilter.toLowerCase()));
 
     return (
-        <div className="flex h-screen bg-white font-sans overflow-hidden">
-            <div className="w-64 flex-shrink-0 border-r border-slate-200">
-                <Sidebar />
-            </div>
+        <div className="flex flex-col md:flex-row h-screen bg-white font-sans overflow-hidden">
+            <Sidebar />
 
             <div className="flex-1 flex flex-col h-full overflow-hidden">
                 <div className="h-16 border-b border-slate-200 bg-white flex items-center px-4 justify-between shrink-0 shadow-sm z-10">
