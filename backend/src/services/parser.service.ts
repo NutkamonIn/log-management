@@ -86,7 +86,7 @@ export const normalizeLog = (rawLog: CentralLogSchema): CentralLogSchema => {
 
     // 'status' or 'reason' -> action
     if (rawLog.status && !parsed.action) {
-        parsed.action = rawLog.status.toLowerCase();
+        parsed.action = String(rawLog.status).toLowerCase();
     }
     if (rawLog.reason && !parsed.action) {
         parsed.action = rawLog.reason.toLowerCase();

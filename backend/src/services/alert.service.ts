@@ -14,7 +14,7 @@ export const checkloginFailures = async () => {
                     bool: {
                         must: [
                             { match: { action: "login_failed" } },
-                            { range: { "@timestamp": { gte: "now-5m/m" } } } // 5m
+                            { range: { "@timestamp": { gte: "now-1m/m" } } } // 1m
                         ]
                     }
                 },
@@ -37,7 +37,7 @@ export const checkloginFailures = async () => {
             const ip = bucket.key;
             const count = bucket.doc_count;
 
-            console.log(`[alert] ip ที่หน้าสงสัย ${ip} ล็อกอินผิด ${count} ครั้ง ใน 5 นาที`)
+            console.log(`[alert] ip ที่หน้าสงสัย ${ip} ล็อกอินผิด ${count} ครั้ง ใน 1 นาที`)
 
             await osClient.index({
                 index: "alerts",
@@ -49,7 +49,7 @@ export const checkloginFailures = async () => {
                     severity: 10,
                     action: "brute_force_detected",
                     src_ip: ip,
-                    msg: `Detected ${count} failed logins in the last 5 minutes from IP ${ip}`
+                    msg: `Detected ${count} failed logins in the last 1 minute from IP ${ip}`
                 }
             });
         }

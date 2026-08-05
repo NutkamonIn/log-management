@@ -22,7 +22,20 @@ export const applyRetentionPolicy = async () => {
         //ตรวจสอบว่าลบไปกี่รายการ
         // Check Number of log that is deleted 
         if ((response.body as any).deleted > 0) {
-            console.log(`[Retention] ลบข้อมูลเก่าสำเร็จ จำนวน: ${(response.body as any).deleted} รายการ`);
+            const deletedCount = (response.body as any).deleted;
+            console.log(`[Retention] ลบข้อมูลเก่าสำเร็จ จำนวน: ${deletedCount} รายการ`);
+            await osClient.index({
+                index: "alerts",
+                body: {
+                    "@timestamp": new Date().toISOString(),
+                    tenant: "all",
+                    source: "system",
+                    event_type: "alert",
+                    severity: 5,
+                    action: "log_retention_deleted",
+                    msg: `System deleted ${deletedCount} logs older than 7 days due to retention policy`
+                }
+            });
         } else {
             console.log("[Retention] ไม่มีข้อมูลเก่าที่ต้องลบ")
         }

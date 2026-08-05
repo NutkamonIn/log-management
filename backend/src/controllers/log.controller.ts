@@ -48,7 +48,9 @@ export const searchLogsController = async (req: AuthRequest, res: Response) => {
     try {
         if (!req.user) return res.status(401).json({ detail: "Unauthorized" });
         const timeRange = req.query.timeRange as string || '15m';
-        const logs = await searchLogsService(req.user, req.query.q as string, timeRange);
+        const startTime = req.query.startTime as string | undefined;
+        const endTime = req.query.endTime as string | undefined;
+        const logs = await searchLogsService(req.user, req.query.q as string, timeRange, startTime, endTime);
         res.json({ status: "success", tenant_access: req.user.tenant, data: logs });
     } catch (error: any) {
         console.error("Search Error:", error);
@@ -84,9 +86,7 @@ export const getAlertsController = async (req: AuthRequest, res: Response) => {
 export const investigateController = async (req: AuthRequest, res: Response) => {
     try {
         if (!req.user) return res.status(401).json({ detail: "Unauthorized" });
-        const entity = req.query.entity as string;
-        if (!entity) return res.status(400).json({ detail: "Entity parameter is required" });
-        
+        const entity = req.query.entity as string || "";
         const profile = await investigateEntityService(req.user, entity);
         res.json({ status: "success", data: profile });
     } catch (error: any) {
