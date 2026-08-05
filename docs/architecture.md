@@ -1,4 +1,4 @@
-﻿# Log Management System Architecture
+# Log Management System Architecture
 
 This document describes the system architecture and data flow of the Centralized Log Management system.
 
@@ -63,3 +63,6 @@ graph TD
 5. **Background Jobs**
    - **Alerting Cron:** Runs every 1 minute to query the database against security thresholds (e.g., login_failed > 5 times). If violations are detected, an alert record is generated.
    - **Retention Cron:** Runs every midnight to delete logs older than 7 days, managing storage capacity and complying with data retention policies.
+6. **Infrastructure as Code (IaC)**
+   - To support automated and scalable cloud deployments, the project includes a complete **Terraform** configuration (`terraform/main.tf`).
+   - This setup dynamically provisions an AWS EC2 instance, configures the required Security Group policies, and bootstraps the Docker environment via User Data script, ensuring a 100% reproducible production environment in under 5 minutes.

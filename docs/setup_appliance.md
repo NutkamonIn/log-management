@@ -1,4 +1,4 @@
-﻿# Local Appliance Setup Guide
+# Local Appliance Setup Guide
 
 This document explains how to install and run the Log Management system as a local appliance or on a single Virtual Machine. It is ideal for Proof of Concept (PoC) testing and development.
 
@@ -30,7 +30,7 @@ The deployment process has been automated via Batch Scripts to enhance the Devel
    OpenSearch requires approximately 30 seconds to fully initialize. The Backend service is configured to wait until OpenSearch is healthy before starting other processes.
 
 4. **Accessing the System:**
-   - **Frontend UI (Dashboard & Logs Explorer):** `http://localhost`
+   - **Frontend UI (Dashboard & Logs Explorer):** `http://localhost` or `https://localhost` (Accept the self-signed certificate warning)
    - **Backend API:** `http://localhost:8000`
    - **OpenSearch (Raw Access):** `http://localhost:9200`
    - **OpenSearch Dashboards:** `http://localhost:5601`
@@ -50,18 +50,21 @@ To test the Dashboard functionality, sample data must be seeded into the system.
 
 1. **Simulating Data via HTTP API (JSON):**
    ```powershell
-   cd ingest
-   npm install
-   npm run http
+   npx tsx ingest/src/simulate_logs.ts local
    ```
    *This script simulates log generation from CrowdStrike, AWS, Microsoft AD, and Custom APIs.*
 
 2. **Simulating Data via Syslog (UDP 5141/5142):**
    ```powershell
-   cd ingest
-   npm run syslog
+   npx tsx ingest/src/simulate_syslog.ts local
    ```
    *This script simulates network traffic transmitted via the Syslog protocol.*
+
+3. **Simulating Brute-Force Attack (Security Alert Trigger):**
+   ```powershell
+   node tests/test_bruteforce.js local
+   ```
+   *This script performs a rapid brute-force attack simulation to trigger the Security Alerts page.*
 
 ---
 

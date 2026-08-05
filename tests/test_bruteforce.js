@@ -1,9 +1,18 @@
 const http = require('http');
+const https = require('https');
+
+// Usage: 
+// node tests/test_bruteforce.js local   -> To send to localhost
+// node tests/test_bruteforce.js         -> To send to AWS
+const target = process.argv[2];
+const isLocal = target === 'local';
+const API_URL = isLocal ? 'http://localhost:8000/api/v1' : 'https://log.demo-labs.site/api/v1';
+const client = isLocal ? http : https;
 
 const loginData = JSON.stringify({ username: 'admin', password: 'adminpassword' });
 
-console.log("กำลังเข้าสู่ระบบเพื่อขอ Token...");
-const req = http.request('http://localhost:8000/api/v1/login', {
+console.log(`กำลังเข้าสู่ระบบเพื่อขอ Token จาก ${API_URL}...`);
+const req = client.request(`${API_URL}/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(loginData) }
 }, (res) => {
@@ -13,17 +22,17 @@ const req = http.request('http://localhost:8000/api/v1/login', {
         const parsed = JSON.parse(data);
         const token = parsed.access_token;
         if (!token) {
-            console.error("Login failed!");
+            console.error("Login failed! Response:", data);
             return;
         }
 
-        console.log("กำลังจำลองการโจมตี...");
+        console.log("ล็อกอินสำเร็จ! กำลังจำลองการโจมตี...");
 
         let count = 0;
         const interval = setInterval(() => {
             if (count >= 6) {
                 clearInterval(interval);
-                console.log("\ ยิง Log จำลองเสร็จสิ้น!");
+                console.log("\n ยิง Log จำลองเสร็จสิ้น!");
                 console.log(" กลับไปที่หน้าเว็บ แล้วรอประมาณ 1 นาทีให้ระบบ Cron Job ตรวจจับการโจมตีครับ");
                 return;
             }
@@ -39,7 +48,7 @@ const req = http.request('http://localhost:8000/api/v1/login', {
                 event_type: "auth"
             });
 
-            const req2 = http.request('http://localhost:8000/api/v1/ingest', {
+            const req2 = client.request(`${API_URL}/ingest`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

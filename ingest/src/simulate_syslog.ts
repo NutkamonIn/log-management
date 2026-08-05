@@ -1,12 +1,15 @@
 import dgram from 'dgram';
 
-const HOST = 'log.demo-labs.site';
+const target = process.argv[2];
+const HOST = target === 'local' ? '127.0.0.1' : 'log.demo-labs.site';
+const PORT_A = 5141; // Tenant demoA
+const PORT_B = 5142; // Tenant demoB
 const client = dgram.createSocket('udp4');
 
 // จำลองข้อมูลของลูกค้า demoA (ส่งไปพอร์ต 5141)
 const messagesDemoA = [
-    { port: 5141, msg: "<134>Aug 20 12:44:56 fw01 vendor=demo product=ngfw action=deny src=10.0.1.10 dst=8.8.8.8 spt=5353 dpt=53 proto=udp msg=DNS_blocked policy=Block-DNS" },
-    { port: 5141, msg: "<190>Aug 20 13:01:02 r1 if=ge-0/0/1 event=link-down mac=aa:bb:cc:dd:ee:ff reason=carrier-loss" }
+    { port: PORT_A, msg: "<134>Aug 20 12:44:56 fw01 vendor=demo product=ngfw action=deny src=10.0.1.10 dst=8.8.8.8 spt=5353 dpt=53 proto=udp msg=DNS_blocked policy=Block-DNS" },
+    { port: PORT_A, msg: "<190>Aug 20 13:01:02 r1 if=ge-0/0/1 event=link-down mac=aa:bb:cc:dd:ee:ff reason=carrier-loss" }
 ];
 
 // จำลองข้อมูลของลูกค้า demoB (ส่งไปพอร์ต 5142)

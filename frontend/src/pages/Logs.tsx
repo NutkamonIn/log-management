@@ -15,6 +15,7 @@ export default function Logs() {
     const [selectedFields, setSelectedFields] = useState<string[]>([]);
     const [timeRange, setTimeRange] = useState('15m');
     const [availableFields, setAvailableFields] = useState<{name: string, type: string}[]>([]);
+    const [autoRefresh, setAutoRefresh] = useState('off');
 
     const fetchLogs = async (searchQuery = '') => {
         setIsLoading(true);
@@ -70,8 +71,50 @@ export default function Logs() {
     };
 
     useEffect(() => {
-        fetchLogs();
+        fetchLogs(query);
     }, [timeRange]);
+
+    useEffect(() => {
+        let interval: ReturnType<typeof setInterval>;
+        if (autoRefresh !== 'off') {
+            const ms = autoRefresh === '5s' ? 5000 : autoRefresh === '10s' ? 10000 : 30000;
+            interval = setInterval(() => {
+                // Background fetch (do not trigger loading spinner to avoid flashing)
+                const bgFetch = async () => {
+                    try {
+                        const token = localStorage.getItem('token');
+                        const res = await axios.get(`/api/v1/search?q=${query}&timeRange=${timeRange}`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        const data = res.data.data || [];
+                        setLogs(data);
+                        
+                        if (data.length > 0) {
+                            const buckets: Record<string, number> = {};
+                            data.forEach((log: any) => {
+                                const date = new Date(log._source['@timestamp']);
+                                const minuteKey = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+                                buckets[minuteKey] = (buckets[minuteKey] || 0) + 1;
+                            });
+                            
+                            const sortedKeys = Object.keys(buckets).sort();
+                            const realData = sortedKeys.map(k => ({
+                                time: k,
+                                count: buckets[k]
+                            }));
+                            setHistogramData(realData);
+                        }
+                    } catch (error) {
+                        console.error("Background fetch failed", error);
+                    }
+                };
+                bgFetch();
+            }, ms);
+        }
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [autoRefresh, timeRange, query]);
 
     const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') fetchLogs(query);
@@ -92,30 +135,30 @@ export default function Logs() {
             <Sidebar />
 
             <div className="flex-1 flex flex-col h-full overflow-hidden">
-                <div className="h-16 border-b border-slate-200 bg-white flex items-center px-4 justify-between shrink-0 shadow-sm z-10">
-                    <div className="flex-1 flex items-center max-w-4xl relative">
+                <div className="h-auto md:h-16 py-3 md:py-0 border-b border-slate-200 bg-white flex flex-col md:flex-row items-stretch md:items-center px-4 justify-between shrink-0 shadow-sm z-10 space-y-3 md:space-y-0">
+                    <div className="flex-1 flex items-center max-w-4xl relative w-full">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                             <Search className="w-5 h-5 text-slate-400" />
                         </div>
                         <input
                             type="text"
                             className="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-l-md focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 outline-none"
-                            placeholder="Search... (e.g. status:404 OR src_ip:192.168.1.50)"
+                            placeholder="Search... (e.g. status:404)"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             onKeyDown={handleSearch}
                         />
                         <button 
                             onClick={() => fetchLogs(query)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 text-sm font-medium rounded-r-md transition-colors border border-blue-600"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 text-sm font-medium rounded-r-md transition-colors border border-blue-600 shrink-0"
                         >
                             Update
                         </button>
                     </div>
 
-                    <div className="flex items-center space-x-2 ml-4">
+                    <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
                         <select 
-                            className="bg-white border border-slate-300 text-slate-700 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+                            className="bg-white border border-slate-300 text-slate-700 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 px-3 py-2 flex-1 md:flex-none"
                             value={timeRange}
                             onChange={(e) => setTimeRange(e.target.value)}
                         >
@@ -124,17 +167,31 @@ export default function Logs() {
                             <option value="24h">Last 24 hours</option>
                             <option value="7d">Last 7 days</option>
                         </select>
+                        <div className="flex items-center border border-slate-300 bg-white rounded-md px-2 shrink-0">
+                            <span className="text-xs text-slate-500 font-medium mr-1 hidden sm:inline">Refresh:</span>
+                            <select 
+                                className="bg-transparent text-slate-700 text-sm focus:outline-none py-2 cursor-pointer font-medium"
+                                value={autoRefresh}
+                                onChange={(e) => setAutoRefresh(e.target.value)}
+                            >
+                                <option value="off">Off</option>
+                                <option value="5s">5s</option>
+                                <option value="10s">10s</option>
+                                <option value="30s">30s</option>
+                            </select>
+                        </div>
                         <button 
                             onClick={() => fetchLogs(query)}
-                            className="p-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 bg-white"
+                            className="p-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 bg-white shrink-0"
+                            title="Force Refresh"
                         >
                             <RefreshCw className="w-4 h-4 text-slate-500" />
                         </button>
                     </div>
                 </div>
 
-                <div className="flex flex-1 overflow-hidden bg-white">
-                    <div className="w-64 border-r border-slate-200 bg-slate-50 flex flex-col shrink-0">
+                <div className="flex flex-col md:flex-row flex-1 overflow-hidden bg-white">
+                    <div className="hidden md:flex w-64 border-r border-slate-200 bg-slate-50 flex-col shrink-0">
                         <div className="p-3 border-b border-slate-200 flex items-center justify-between bg-slate-100/50">
                             <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Available Fields</span>
                             <Filter className="w-4 h-4 text-slate-400" />

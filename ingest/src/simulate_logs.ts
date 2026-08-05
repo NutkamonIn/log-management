@@ -1,7 +1,12 @@
 import axios from 'axios';
 
-const API_URL = 'https://log.demo-labs.site/api/v1';
-
+// Usage: 
+// npx tsx ingest/src/simulate_logs.ts local   -> To send to localhost
+// npx tsx ingest/src/simulate_logs.ts         -> To send to AWS
+const target = process.argv[2];
+const API_URL = target === 'local' 
+    ? 'http://localhost:8000/api/v1' 
+    : 'https://log.demo-labs.site/api/v1';
 const crowdStrikeLog = {
     tenant: "demoA",
     source: "crowdstrike",

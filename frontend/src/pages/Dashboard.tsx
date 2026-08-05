@@ -17,6 +17,7 @@ export default function Dashboard() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [timeRange, setTimeRange] = useState('24h');
     const [tenantFilter, setTenantFilter] = useState('all');
+    const [autoRefresh, setAutoRefresh] = useState('off');
 
     const fetchStats = async () => {
         try {
@@ -34,6 +35,19 @@ export default function Dashboard() {
         fetchStats();
     }, [timeRange, tenantFilter]);
 
+    useEffect(() => {
+        let interval: ReturnType<typeof setInterval>;
+        if (autoRefresh !== 'off') {
+            const ms = autoRefresh === '5s' ? 5000 : autoRefresh === '10s' ? 10000 : 30000;
+            interval = setInterval(() => {
+                fetchStats();
+            }, ms);
+        }
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [autoRefresh, timeRange, tenantFilter]);
+
     return (
         <div className="flex flex-col md:flex-row h-screen bg-slate-50 font-sans overflow-hidden">
             <Sidebar />
@@ -46,7 +60,7 @@ export default function Dashboard() {
                     </div>
                     
                     {/* Filters */}
-                    <div className="flex space-x-3 mt-4 md:mt-0 items-center">
+                    <div className="flex flex-wrap gap-3 mt-4 md:mt-0 items-center">
                         <select 
                             className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-sm"
                             value={tenantFilter}
@@ -65,6 +79,19 @@ export default function Dashboard() {
                             <option value="24h">Last 24 Hours</option>
                             <option value="7d">Last 7 Days</option>
                         </select>
+                        <div className="flex items-center border border-slate-200 bg-white rounded-lg shadow-sm px-2">
+                            <span className="text-xs text-slate-500 font-medium mr-2 ml-1">Auto-refresh:</span>
+                            <select 
+                                className="bg-transparent text-slate-700 text-sm focus:outline-none p-2.5 cursor-pointer font-medium"
+                                value={autoRefresh}
+                                onChange={(e) => setAutoRefresh(e.target.value)}
+                            >
+                                <option value="off">Off</option>
+                                <option value="5s">5s</option>
+                                <option value="10s">10s</option>
+                                <option value="30s">30s</option>
+                            </select>
+                        </div>
                         <button 
                             onClick={() => fetchStats()}
                             className="p-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 bg-white shadow-sm flex items-center justify-center h-10 w-10"

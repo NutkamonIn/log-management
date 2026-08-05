@@ -1,4 +1,4 @@
-﻿# SaaS/Cloud Deployment Guide
+# SaaS/Cloud Deployment Guide
 
 This document explains how to deploy the **Log Management** system to a public Cloud Server (e.g., AWS EC2, DigitalOcean, Azure) to operate it as a SaaS (Software as a Service) platform.
 
@@ -41,6 +41,24 @@ This document explains how to deploy the **Log Management** system to a public C
 
 ---
 
+## Automated Cloud Provisioning (IaC - Bonus)
+
+If you prefer to automate the entire infrastructure setup on AWS, this project provides a complete **Terraform** configuration. Instead of manually creating an EC2 instance, you can use the Infrastructure as Code (IaC) approach.
+
+1. Navigate to the Terraform directory:
+   ```bash
+   cd terraform
+   ```
+2. Deploy the infrastructure:
+   ```bash
+   terraform init
+   terraform plan
+   terraform apply
+   ```
+   *(Type `yes` when prompted. Terraform will automatically provision an EC2 instance, configure Security Groups, install Docker, and prepare the environment in under 5 minutes.)*
+
+---
+
 ## Secure Connection (HTTPS/TLS)
 
 The system supports two types of security certificates:
@@ -63,9 +81,15 @@ The system supports two types of security certificates:
 On the Client side that needs to forward logs to the Cloud Server, replace the `127.0.0.1` IP address with the Public IP of this server:
 
 **1. Ingestion via HTTP API (JSON):**
-Use Endpoint: `https://<YOUR_SERVER_PUBLIC_IP>/api/v1/ingest`
+Use Endpoint: `https://log.demo-labs.site/api/v1/ingest`
+*(Testing from local machine: `npx tsx ingest/src/simulate_logs.ts`)*
 
 **2. Ingestion via Syslog (UDP):**
 Tenant A Clients: Forward Syslog to Port `5141`
 Tenant B Clients: Forward Syslog to Port `5142`
-*(Ensure that these ports are opened on the Cloud Provider's Firewall / Security Group to allow inbound traffic)*
+*(Testing from local machine: `npx tsx ingest/src/simulate_syslog.ts`)*
+*(Ensure that these UDP ports are opened on the Cloud Provider's Firewall / Security Group)*
+
+**3. Simulating Security Alerts (Brute-Force):**
+To test the detection rules, you can run the brute-force script from your local machine:
+*(Testing from local machine: `node tests/test_bruteforce.js`)*

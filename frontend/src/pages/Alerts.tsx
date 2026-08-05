@@ -17,35 +17,67 @@ interface AlertLog {
 export default function Alerts() {
     const [alerts, setAlerts] = useState<AlertLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [autoRefresh, setAutoRefresh] = useState('off');
+
+    const fetchAlerts = async (isBackground = false) => {
+        if (!isBackground) setIsLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get('/api/v1/alerts', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setAlerts(res.data.data);
+        } catch (error) {
+            console.error("Failed to fetch alerts", error);
+        } finally {
+            if (!isBackground) setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchAlerts = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const res = await axios.get('/api/v1/alerts', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setAlerts(res.data.data);
-            } catch (error) {
-                console.error("Failed to fetch alerts", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchAlerts();
     }, []);
+
+    useEffect(() => {
+        let interval: ReturnType<typeof setInterval>;
+        if (autoRefresh !== 'off') {
+            const ms = autoRefresh === '5s' ? 5000 : autoRefresh === '10s' ? 10000 : 30000;
+            interval = setInterval(() => {
+                fetchAlerts(true);
+            }, ms);
+        }
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [autoRefresh]);
 
     return (
         <div className="flex flex-col md:flex-row h-screen bg-slate-50 font-sans overflow-hidden">
             <Sidebar />
             <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-                <div className="mb-8 flex items-center space-x-3">
-                    <div className="p-2 bg-red-100 text-red-600 rounded-lg">
-                        <ShieldAlert className="w-6 h-6" />
+                <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+                    <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-red-100 text-red-600 rounded-lg">
+                            <ShieldAlert className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-800">Security Alerts</h1>
+                            <p className="text-slate-500 text-sm mt-1">Monitor brute-force attacks and suspicious activities</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Security Alerts</h1>
-                        <p className="text-slate-500 text-sm mt-1">Monitor brute-force attacks and suspicious activities</p>
+
+                    <div className="flex items-center border border-slate-200 bg-white rounded-lg shadow-sm px-2">
+                        <span className="text-xs text-slate-500 font-medium mr-2 ml-1">Auto-refresh:</span>
+                        <select 
+                            className="bg-transparent text-slate-700 text-sm focus:outline-none p-2.5 cursor-pointer font-medium"
+                            value={autoRefresh}
+                            onChange={(e) => setAutoRefresh(e.target.value)}
+                        >
+                            <option value="off">Off</option>
+                            <option value="5s">5s</option>
+                            <option value="10s">10s</option>
+                            <option value="30s">30s</option>
+                        </select>
                     </div>
                 </div>
 
