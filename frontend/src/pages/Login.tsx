@@ -15,7 +15,7 @@ export default function Login() {
         setIsLoading(true);
         try {
             const res = await axios.post('/api/v1/login', { username, password });
-            localStorage.setItem('token', res.data.access_token);
+            sessionStorage.setItem('token', res.data.access_token);
             navigate('/');
         } catch (err) {
             setError('Invalid credentials. Please try again.');
@@ -27,7 +27,7 @@ export default function Login() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 font-sans p-4">
             <div className="w-full max-w-md bg-white p-10 rounded-2xl shadow-xl border border-slate-100">
-                
+
                 {/* Header */}
                 <div className="flex flex-col items-center mb-8">
                     <div className="p-3 bg-blue-50 rounded-xl mb-4 text-blue-600">
@@ -89,7 +89,7 @@ export default function Login() {
                         )}
                     </button>
                 </form>
-                
+
                 {/* Demo Accounts */}
                 <div className="mt-8 pt-6 border-t border-slate-100 text-sm space-y-2">
                     <p className="font-semibold text-slate-400 uppercase text-xs tracking-wider mb-3">Demo Accounts</p>

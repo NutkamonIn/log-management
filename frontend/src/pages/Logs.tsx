@@ -10,23 +10,23 @@ export default function Logs() {
     const [isLoading, setIsLoading] = useState(false);
     const [expandedRow, setExpandedRow] = useState<number | null>(null);
     const [histogramData, setHistogramData] = useState<any[]>([]);
-    
+
     const [fieldFilter, setFieldFilter] = useState('');
     const [selectedFields, setSelectedFields] = useState<string[]>([]);
     const [timeRange, setTimeRange] = useState('15m');
-    const [availableFields, setAvailableFields] = useState<{name: string, type: string}[]>([]);
+    const [availableFields, setAvailableFields] = useState<{ name: string, type: string }[]>([]);
     const [autoRefresh, setAutoRefresh] = useState('off');
 
     const fetchLogs = async (searchQuery = '') => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const res = await axios.get(`/api/v1/search?q=${searchQuery}&timeRange=${timeRange}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = res.data.data || [];
             setLogs(data);
-            
+
             // Extract dynamic fields from logs
             const fieldsSet = new Set<string>();
             const fieldTypes: Record<string, string> = {};
@@ -45,7 +45,7 @@ export default function Logs() {
                 type: fieldTypes[name] || 'string'
             })).sort((a, b) => a.name.localeCompare(b.name));
             setAvailableFields(dynamicFields);
-            
+
             if (data.length > 0) {
                 const buckets: Record<string, number> = {};
                 data.forEach((log: any) => {
@@ -53,13 +53,13 @@ export default function Logs() {
                     const minuteKey = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
                     buckets[minuteKey] = (buckets[minuteKey] || 0) + 1;
                 });
-                
+
                 const sortedKeys = Object.keys(buckets).sort();
                 const realData = sortedKeys.map(k => ({
                     time: k,
                     count: buckets[k]
                 }));
-                
+
                 setHistogramData(realData);
             } else {
                 setHistogramData([]);
@@ -82,13 +82,13 @@ export default function Logs() {
                 // Background fetch (do not trigger loading spinner to avoid flashing)
                 const bgFetch = async () => {
                     try {
-                        const token = localStorage.getItem('token');
+                        const token = sessionStorage.getItem('token');
                         const res = await axios.get(`/api/v1/search?q=${query}&timeRange=${timeRange}`, {
                             headers: { Authorization: `Bearer ${token}` }
                         });
                         const data = res.data.data || [];
                         setLogs(data);
-                        
+
                         if (data.length > 0) {
                             const buckets: Record<string, number> = {};
                             data.forEach((log: any) => {
@@ -96,7 +96,7 @@ export default function Logs() {
                                 const minuteKey = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
                                 buckets[minuteKey] = (buckets[minuteKey] || 0) + 1;
                             });
-                            
+
                             const sortedKeys = Object.keys(buckets).sort();
                             const realData = sortedKeys.map(k => ({
                                 time: k,
@@ -148,7 +148,7 @@ export default function Logs() {
                             onChange={(e) => setQuery(e.target.value)}
                             onKeyDown={handleSearch}
                         />
-                        <button 
+                        <button
                             onClick={() => fetchLogs(query)}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 text-sm font-medium rounded-r-md transition-colors border border-blue-600 shrink-0"
                         >
@@ -157,7 +157,7 @@ export default function Logs() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
-                        <select 
+                        <select
                             className="bg-white border border-slate-300 text-slate-700 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 px-3 py-2 flex-1 md:flex-none"
                             value={timeRange}
                             onChange={(e) => setTimeRange(e.target.value)}
@@ -169,7 +169,7 @@ export default function Logs() {
                         </select>
                         <div className="flex items-center border border-slate-300 bg-white rounded-md px-2 shrink-0">
                             <span className="text-xs text-slate-500 font-medium mr-1 hidden sm:inline">Refresh:</span>
-                            <select 
+                            <select
                                 className="bg-transparent text-slate-700 text-sm focus:outline-none py-2 cursor-pointer font-medium"
                                 value={autoRefresh}
                                 onChange={(e) => setAutoRefresh(e.target.value)}
@@ -180,7 +180,7 @@ export default function Logs() {
                                 <option value="30s">30s</option>
                             </select>
                         </div>
-                        <button 
+                        <button
                             onClick={() => fetchLogs(query)}
                             className="p-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 bg-white shrink-0"
                             title="Force Refresh"
@@ -199,15 +199,15 @@ export default function Logs() {
                         <div className="flex-1 overflow-y-auto p-2">
                             <div className="relative mb-3">
                                 <Search className="w-4 h-4 absolute left-2 top-2 text-slate-400" />
-                                <input 
-                                    type="text" 
-                                    placeholder="Filter fields..." 
+                                <input
+                                    type="text"
+                                    placeholder="Filter fields..."
                                     value={fieldFilter}
                                     onChange={(e) => setFieldFilter(e.target.value)}
-                                    className="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-300 rounded bg-white outline-none" 
+                                    className="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-300 rounded bg-white outline-none"
                                 />
                             </div>
-                            
+
                             {selectedFields.length > 0 && (
                                 <div className="mb-4">
                                     <div className="text-[10px] font-bold text-slate-400 uppercase mb-2 px-2">Selected Fields</div>
@@ -236,7 +236,7 @@ export default function Logs() {
                                                 {field.type === 'string' ? 't' : field.type === 'number' ? '#' : 'ip'}
                                             </span>
                                             <span className="truncate flex-1">{field.name}</span>
-                                            <button 
+                                            <button
                                                 onClick={() => toggleField(field.name)}
                                                 className="hidden group-hover:block text-[10px] bg-slate-300 text-slate-700 px-1.5 py-0.5 rounded hover:bg-blue-500 hover:text-white"
                                             >
@@ -260,7 +260,7 @@ export default function Logs() {
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={histogramData}>
                                             <XAxis dataKey="time" hide />
-                                            <RechartsTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{fontSize: '12px'}} />
+                                            <RechartsTooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ fontSize: '12px' }} />
                                             <Bar dataKey="count" fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={40} isAnimationActive={false} />
                                         </BarChart>
                                     </ResponsiveContainer>
@@ -288,7 +288,7 @@ export default function Logs() {
                                     </div>
                                 )}
                             </div>
-                            
+
                             <div className="flex flex-col">
                                 {isLoading ? (
                                     <div className="p-8 text-center text-sm text-slate-500">Loading documents...</div>
@@ -299,7 +299,7 @@ export default function Logs() {
                                         const isExpanded = expandedRow === idx;
                                         return (
                                             <div key={idx} className="flex flex-col border-b border-slate-100 hover:bg-slate-50/50">
-                                                <div 
+                                                <div
                                                     className="flex cursor-pointer text-sm"
                                                     onClick={() => setExpandedRow(isExpanded ? null : idx)}
                                                 >
@@ -309,7 +309,7 @@ export default function Logs() {
                                                     <div className="w-48 px-4 py-2 shrink-0 text-slate-600 font-mono text-[13px] whitespace-nowrap">
                                                         {new Date(log._source['@timestamp']).toLocaleString()}
                                                     </div>
-                                                    
+
                                                     {selectedFields.length > 0 ? (
                                                         selectedFields.map(field => (
                                                             <div key={field} className="flex-1 px-4 py-2 text-slate-800 font-mono text-[13px] truncate overflow-hidden">
@@ -321,7 +321,7 @@ export default function Logs() {
                                                             <span className="text-slate-400 mr-2">{'{'}</span>
                                                             {Object.entries(log._source).filter(([k]) => k !== '@timestamp').slice(0, 5).map(([k, v], i) => (
                                                                 <React.Fragment key={k}>
-                                                                    <span className="text-blue-600 font-medium">"{k}"</span>: 
+                                                                    <span className="text-blue-600 font-medium">"{k}"</span>:
                                                                     <span className="text-slate-600 mx-1">{JSON.stringify(v)}</span>
                                                                     {i < 4 && <span className="text-slate-300 mr-1">,</span>}
                                                                 </React.Fragment>

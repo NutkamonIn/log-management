@@ -21,7 +21,7 @@ export default function Dashboard() {
 
     const fetchStats = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const res = await axios.get(`/api/v1/dashboard/stats?timeRange=${timeRange}&tenant=${tenantFilter}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -52,16 +52,16 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row h-screen bg-slate-50 font-sans overflow-hidden">
             <Sidebar />
             <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-                
+
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-800">System Overview</h1>
                         <p className="text-slate-500 text-sm mt-1">Analytics and summaries of your log data</p>
                     </div>
-                    
+
                     {/* Filters */}
                     <div className="flex flex-wrap gap-3 mt-4 md:mt-0 items-center">
-                        <select 
+                        <select
                             className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-sm"
                             value={tenantFilter}
                             onChange={(e) => setTenantFilter(e.target.value)}
@@ -70,7 +70,7 @@ export default function Dashboard() {
                             <option value="demoA">Tenant: demoA</option>
                             <option value="demoB">Tenant: demoB</option>
                         </select>
-                        <select 
+                        <select
                             className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-sm"
                             value={timeRange}
                             onChange={(e) => setTimeRange(e.target.value)}
@@ -81,7 +81,7 @@ export default function Dashboard() {
                         </select>
                         <div className="flex items-center border border-slate-200 bg-white rounded-lg shadow-sm px-2">
                             <span className="text-xs text-slate-500 font-medium mr-2 ml-1">Auto-refresh:</span>
-                            <select 
+                            <select
                                 className="bg-transparent text-slate-700 text-sm focus:outline-none p-2.5 cursor-pointer font-medium"
                                 value={autoRefresh}
                                 onChange={(e) => setAutoRefresh(e.target.value)}
@@ -92,7 +92,7 @@ export default function Dashboard() {
                                 <option value="30s">30s</option>
                             </select>
                         </div>
-                        <button 
+                        <button
                             onClick={() => fetchStats()}
                             className="p-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 bg-white shadow-sm flex items-center justify-center h-10 w-10"
                             title="Refresh Data"
@@ -135,11 +135,11 @@ export default function Dashboard() {
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={stats?.timeline || []}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                    <XAxis 
-                                        dataKey="key_as_string" 
-                                        stroke="#64748b" 
-                                        fontSize={12} 
-                                        tickLine={false} 
+                                    <XAxis
+                                        dataKey="key_as_string"
+                                        stroke="#64748b"
+                                        fontSize={12}
+                                        tickLine={false}
                                         axisLine={false}
                                         tickFormatter={(val) => {
                                             const d = new Date(val);

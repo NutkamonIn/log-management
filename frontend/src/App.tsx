@@ -9,7 +9,7 @@ import Logs from './pages/Logs';
 
 // ยามเฝ้าประตู: เช็คว่ามี token ไหม ถ้าไม่มีเด้งไป /login
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   if (!token) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };

@@ -22,7 +22,7 @@ export default function Alerts() {
     const fetchAlerts = async (isBackground = false) => {
         if (!isBackground) setIsLoading(true);
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const res = await axios.get('/api/v1/alerts', {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -68,7 +68,7 @@ export default function Alerts() {
 
                     <div className="flex items-center border border-slate-200 bg-white rounded-lg shadow-sm px-2">
                         <span className="text-xs text-slate-500 font-medium mr-2 ml-1">Auto-refresh:</span>
-                        <select 
+                        <select
                             className="bg-transparent text-slate-700 text-sm focus:outline-none p-2.5 cursor-pointer font-medium"
                             value={autoRefresh}
                             onChange={(e) => setAutoRefresh(e.target.value)}
@@ -85,7 +85,7 @@ export default function Alerts() {
                     <div className="p-5 border-b border-slate-200 bg-slate-50/50">
                         <h2 className="font-semibold text-slate-800">Alert History</h2>
                     </div>
-                    
+
                     {isLoading ? (
                         <div className="p-10 text-center text-slate-500 flex flex-col items-center">
                             <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
