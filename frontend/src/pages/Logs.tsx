@@ -50,7 +50,7 @@ export default function Logs() {
                 const buckets: Record<string, number> = {};
                 data.forEach((log: any) => {
                     const date = new Date(log._source['@timestamp']);
-                    const minuteKey = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+                    const minuteKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                     buckets[minuteKey] = (buckets[minuteKey] || 0) + 1;
                 });
 
@@ -93,7 +93,7 @@ export default function Logs() {
                             const buckets: Record<string, number> = {};
                             data.forEach((log: any) => {
                                 const date = new Date(log._source['@timestamp']);
-                                const minuteKey = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+                                const minuteKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                                 buckets[minuteKey] = (buckets[minuteKey] || 0) + 1;
                             });
 

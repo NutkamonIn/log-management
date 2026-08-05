@@ -91,6 +91,16 @@ export const normalizeLog = (rawLog: CentralLogSchema): CentralLogSchema => {
     if (rawLog.reason && !parsed.action) {
         parsed.action = rawLog.reason.toLowerCase();
     }
+    
+    // M365 'workload' -> product
+    if (rawLog.workload && !parsed.product) {
+        parsed.product = rawLog.workload;
+    }
+
+    // AWS CloudTrail: ensure 'raw' is stringified if it is an object
+    if (parsed.raw && typeof parsed.raw === 'object') {
+        parsed.raw = JSON.stringify(parsed.raw);
+    }
 
     // Time
     if (!parsed["@timestamp"]) {

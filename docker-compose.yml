@@ -56,5 +56,15 @@ services:
     depends_on:
       - backend
 
+  init:
+    build:
+      context: .
+      dockerfile: init/Dockerfile
+    container_name: log-init
+    depends_on:
+      - opensearch
+      - opensearch-dashboards
+      - backend
+
 volumes:
   opensearch-data:

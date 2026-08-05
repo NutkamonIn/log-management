@@ -143,7 +143,7 @@ export default function Dashboard() {
                                         axisLine={false}
                                         tickFormatter={(val) => {
                                             const d = new Date(val);
-                                            return `${d.getHours()}:00`;
+                                            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')} ${d.getHours()}:00`;
                                         }}
                                     />
                                     <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
