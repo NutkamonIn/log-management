@@ -118,3 +118,46 @@ export const getDashboardStatsService = async (user: { role: string; tenant: str
         timeline: (response.body.aggregations as any)?.timeline?.buckets || []
     };
 };
+
+// API สำหรับ Investigate Entity (Threat Hunting)
+export const investigateEntityService = async (user: { role: string; tenant: string }, entity: string) => {
+    // กรอง index ตาม RBAC role: Admin -> log-* || Viewer -> log-tenant
+    const indexPattern = user.role === 'admin' ? 'log-*' : `log-${user.tenant.toLowerCase()}`;
+
+    const response = await osClient.search({
+        index: indexPattern,
+        body: {
+            size: 0,
+            query: {
+                query_string: {
+                    query: `"${entity}"` // ค้นหา Entity นี้จากทุกฟิลด์
+                }
+            },
+            aggs: {
+                first_seen: { min: { field: "@timestamp" } },
+                last_seen: { max: { field: "@timestamp" } },
+                top_events: { terms: { field: "event_type.keyword", size: 5 } },
+                related_ips: { terms: { field: "src_ip.keyword", size: 5 } },
+                related_users: { terms: { field: "user.keyword", size: 5 } },
+                related_hosts: { terms: { field: "host.keyword", size: 5 } },
+                timeline: {
+                    date_histogram: {
+                        field: "@timestamp",
+                        calendar_interval: "hour"
+                    }
+                }
+            }
+        }
+    });
+
+    return {
+        total_events: typeof response.body.hits?.total === 'number' ? response.body.hits.total : response.body.hits?.total?.value || 0,
+        first_seen: (response.body.aggregations as any)?.first_seen?.value_as_string || null,
+        last_seen: (response.body.aggregations as any)?.last_seen?.value_as_string || null,
+        top_events: (response.body.aggregations as any)?.top_events?.buckets || [],
+        related_ips: (response.body.aggregations as any)?.related_ips?.buckets || [],
+        related_users: (response.body.aggregations as any)?.related_users?.buckets || [],
+        related_hosts: (response.body.aggregations as any)?.related_hosts?.buckets || [],
+        timeline: (response.body.aggregations as any)?.timeline?.buckets || []
+    };
+};

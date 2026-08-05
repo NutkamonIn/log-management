@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ShieldAlert, LogOut, Activity, Search } from "lucide-react";
+import { LayoutDashboard, ShieldAlert, LogOut, Activity, Search, Target } from "lucide-react";
 
 export default function Sidebar() {
     const navigate = useNavigate();
@@ -33,6 +33,10 @@ export default function Sidebar() {
                     <NavLink to="/logs" className={({ isActive }) => `flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
                         <Search className="w-5 h-5 shrink-0" />
                         <span className="hidden md:inline">Logs Explorer</span>
+                    </NavLink>
+                    <NavLink to="/investigate" className={({ isActive }) => `flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+                        <Target className="w-5 h-5 shrink-0" />
+                        <span className="hidden md:inline">Investigate</span>
                     </NavLink>
                     <button
                         onClick={handleLogout}

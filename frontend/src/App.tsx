@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Alerts from './pages/Alerts';
 import Logs from './pages/Logs';
+import Investigate from './pages/Investigate';
 
 // ยามเฝ้าประตู: เช็คว่ามี token ไหม ถ้าไม่มีเด้งไป /login
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -47,6 +48,16 @@ function App() {
           element={
             <ProtectedRoute>
               <Logs />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* หน้า Investigate  */}
+        <Route
+          path="/investigate"
+          element={
+            <ProtectedRoute>
+              <Investigate />
             </ProtectedRoute>
           }
         />

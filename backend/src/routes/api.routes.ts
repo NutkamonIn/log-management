@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginController, ingestLogController, searchLogsController, getDashboardStatsController, getAlertsController } from "../controllers/log.controller.js";
+import { loginController, ingestLogController, searchLogsController, getDashboardStatsController, getAlertsController, investigateController } from "../controllers/log.controller.js";
 import { authenticateToken } from "../middlewares/auth.middleware.js";
 
 const router = Router();
@@ -14,5 +14,8 @@ router.get('/dashboard/stats', authenticateToken, getDashboardStatsController as
 
 // Alerts
 router.get('/alerts', authenticateToken, getAlertsController as any);
+
+// Investigate
+router.get('/investigate', authenticateToken, investigateController as any);
 
 export default router;

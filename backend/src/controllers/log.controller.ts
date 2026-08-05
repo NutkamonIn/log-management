@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { indexLogService, searchLogsService, getDashboardStatsService } from '../services/log.service.js';
+import { indexLogService, searchLogsService, getDashboardStatsService, investigateEntityService } from '../services/log.service.js';
 import { getAlertsService } from '../services/alert.service.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
 import jwt from 'jsonwebtoken';
@@ -76,6 +76,21 @@ export const getAlertsController = async (req: AuthRequest, res: Response) => {
         res.json({ status: "success", data: alerts });
     } catch (error: any) {
         console.error("Get Alerts Error:", error);
+        res.status(500).json({ detail: error.message });
+    }
+};
+
+// 6. Controller สำหรับ Investigate
+export const investigateController = async (req: AuthRequest, res: Response) => {
+    try {
+        if (!req.user) return res.status(401).json({ detail: "Unauthorized" });
+        const entity = req.query.entity as string;
+        if (!entity) return res.status(400).json({ detail: "Entity parameter is required" });
+        
+        const profile = await investigateEntityService(req.user, entity);
+        res.json({ status: "success", data: profile });
+    } catch (error: any) {
+        console.error("Investigate Error:", error);
         res.status(500).json({ detail: error.message });
     }
 };
