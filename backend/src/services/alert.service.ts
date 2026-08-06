@@ -21,7 +21,7 @@ export const checkloginFailures = async () => {
                 aggs: {
                     ips: {
                         // check ip if login_failed > 5 alert
-                        terms: { field: "src_ip.keyword", min_doc_count: 5 }
+                        terms: { field: "src_ip", min_doc_count: 5 }
                     }
                 }
             }

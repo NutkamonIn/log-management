@@ -101,11 +101,11 @@ export const getDashboardStatsService = async (user: { role: string; tenant: str
             aggs: {
                 // จัด IP ที่เจอมากสุด
                 top_ips: {
-                    terms: { field: "src_ip.keyword", size: 5 }
+                    terms: { field: "src_ip", size: 5 }
                 },
                 // จัดอันดับ Event Type
                 top_events: {
-                    terms: { field: "event_type.keyword", size: 5 }
+                    terms: { field: "event_type", size: 5 }
                 },
                 // จัดอันดับ User
                 top_users: {
@@ -191,8 +191,8 @@ export const investigateEntityService = async (user: { role: string; tenant: str
             aggs: {
                 first_seen: { min: { field: "@timestamp" } },
                 last_seen: { max: { field: "@timestamp" } },
-                top_events: { terms: { field: "event_type.keyword", size: 5 } },
-                related_ips: { terms: { field: "src_ip.keyword", size: 5 } },
+                top_events: { terms: { field: "event_type", size: 5 } },
+                related_ips: { terms: { field: "src_ip", size: 5 } },
                 related_users: { terms: { field: "user.keyword", size: 5 } },
                 related_hosts: { terms: { field: "host.keyword", size: 5 } },
                 timeline: {
