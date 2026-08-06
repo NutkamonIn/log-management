@@ -125,12 +125,12 @@ export default function TimeRangePicker({ onChange }: TimeRangePickerProps) {
 
             {/* Custom Date Popover */}
             {isCustomOpen && (
-                <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-lg z-50 overflow-hidden border border-slate-200">
-                    <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center">
+                <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-lg z-50 border border-slate-200">
+                    <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center rounded-t-xl">
                         <Calendar className="w-4 h-4 text-blue-500 mr-2" />
                         <h3 className="text-slate-700 text-sm font-semibold">Custom Range</h3>
                     </div>
-                    <div className="p-4 space-y-4">
+                    <div className="p-4 flex flex-col gap-4">
                         <div>
                             <label className="block text-xs font-semibold text-slate-600 mb-1">From</label>
                             <input 
@@ -152,7 +152,7 @@ export default function TimeRangePicker({ onChange }: TimeRangePickerProps) {
                         <button 
                             onClick={handleCustomApply}
                             disabled={!startDateTime || !endDateTime}
-                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 text-white font-medium py-2 rounded-lg transition-colors text-sm mt-2"
+                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 text-white font-medium py-2 rounded-lg transition-colors text-sm"
                         >
                             Apply Custom Range
                         </button>
