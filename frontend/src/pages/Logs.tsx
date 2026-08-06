@@ -182,7 +182,7 @@ export default function Logs() {
             <Sidebar />
 
             <div className="flex-1 flex flex-col h-full overflow-hidden">
-                <div className="h-auto md:h-16 py-3 md:py-0 border-b border-slate-200 bg-white flex flex-col md:flex-row items-stretch md:items-center px-4 justify-between shrink-0 shadow-sm z-10 space-y-3 md:space-y-0">
+                <div className="h-auto md:h-16 py-3 md:py-0 border-b border-slate-200 bg-white flex flex-col md:flex-row items-stretch md:items-center px-4 justify-between shrink-0 shadow-sm z-40 space-y-3 md:space-y-0">
                     <div className="flex-1 flex items-center max-w-4xl relative w-full">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                             <Search className="w-5 h-5 text-slate-400" />
